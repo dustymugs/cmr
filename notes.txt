@@ -1,0 +1,7 @@
+# to run cmr from cmr repo root:
+
+docker/run_x11.sh --runtime=nvidia -v /home/dustymugs/Projects:/projects -p 8886:8888 cmr
+
+# ONLY first container run
+
+/usr/local/bin/init_cmr.sh

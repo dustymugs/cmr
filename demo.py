@@ -67,9 +67,10 @@ def visualize(img, outputs, renderer):
 
     img = np.transpose(img, (1, 2, 0))
     import matplotlib.pyplot as plt
-    plt.ion()
-    plt.figure(1)
     plt.clf()
+    plt.ion()
+    #plt.figure(1)
+    #plt.clf()
     plt.subplot(231)
     plt.imshow(img)
     plt.title('input')
@@ -111,6 +112,7 @@ def main(_):
     renderer = predictor.vis_rend
     renderer.set_light_dir([0, 1, -1], 0.4)
 
+    #import ipdb;ipdb.set_trace()
     visualize(img, outputs, predictor.vis_rend)
 
 

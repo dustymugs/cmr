@@ -14,6 +14,12 @@ wget https://people.eecs.berkeley.edu/~shubhtuls/cachedir/cmr/cachedir.tar.gz
 tar -vzxf cachedir.tar.gz
 ```
 
+Expected MD5 hash for cachedir.tar.gz
+
+```
+89842f8937a136bfdd7106e80f88d30f
+```
+
 #### Computing SfM
 We provide the computed SfM. If you want to compute them yourself, run via matlab:
 ```

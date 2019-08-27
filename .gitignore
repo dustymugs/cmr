@@ -9,6 +9,7 @@ ipyNb
 *.key
 *.out
 *.gz
+*.t*gz
 *.blg
 *.aux
 *.bbl
@@ -16,4 +17,4 @@ ipyNb
 *.pdf
 *.texnicle
 *.fdb_latexmk
-
+*.sw*

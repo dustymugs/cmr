@@ -37,6 +37,12 @@ wget https://people.eecs.berkeley.edu/~kanazawa/cachedir/cmr/model.tar.gz & tar 
 ```
 You should see `cmr/cachedir/snapshots/bird_net/`
 
+Expected MD5 hash for model.tar.gz
+
+```
+b21c87ec5dae4414a21086d631afdb30
+```
+
 2. Run the demo:
 ```
 python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/img1.jpg
