@@ -31,11 +31,10 @@ bash install_external.sh
 ```
 
 ### Demo
-1. From the `cmr` directory, download the trained model:
+1. From the `cmr` directory, download the trained model. You should see `cmr/cachedir/snapshots/bird_net/`
 ```
 wget https://people.eecs.berkeley.edu/~kanazawa/cachedir/cmr/model.tar.gz & tar -vzxf model.tar.gz
 ```
-You should see `cmr/cachedir/snapshots/bird_net/`
 
 Expected MD5 hash for model.tar.gz
 
@@ -50,7 +49,7 @@ python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_dat
 ```
 
 ### Training
-Please see [doc/train.md](https://github.com/akanazawa/cmr/blob/master/doc/train.md)
+Please see [doc/train.md](doc/train.md)
 
 ### Citation
 If you use this code for your research, please consider citing:
