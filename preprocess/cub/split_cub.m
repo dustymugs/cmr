@@ -21,7 +21,10 @@ num_images = length(images);
 
 half = round(num_images / 2);
 
-rng(100);
+% rng(100);
+randn('seed', 100);
+rand('seed', 100);
+
 inds = randperm(num_images);
 test_inds = sort(inds(1:half));
 val_inds = sort(inds(half:end));

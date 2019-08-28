@@ -13,10 +13,12 @@ kp_names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg',
 kp_perm = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 var = load(cub_file);
 
-n_birds = length(var.images);
+fprintf('CUB File: %s\n', cub_file);
+fflush(stdout);
 
 if ~exist(out_path)
     fprintf('Computing new sfm\n')
+    fflush(stdout);
     kps_all = [];
     vis_all = [];
     box_scale = [];
@@ -25,6 +27,7 @@ if ~exist(out_path)
     bf_edges = [14 5]; % back to front edges (along -Y)
 
     %% Construct keypoint matrix
+    n_birds = length(var.images);
     box_trans = zeros(n_birds, 2);
     for b = 1:n_birds
         % bbox to normalize
@@ -81,6 +84,7 @@ if ~exist(out_path)
     max_dist = max(pdist(S'));
     S_scale = 2. / max_dist;
     fprintf('Scale Shape by %.2g\n', S_scale);
+    fflush(stdout);
     S = S*S_scale;
     [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
@@ -110,6 +114,8 @@ if ~exist(out_path)
     conv_tri = [conv_tri(:, [1,2,3]); conv_tri(:, [1,2,4]); conv_tri(:, [1,3,4]); conv_tri(:, [4,2,3])];
     save(out_path, 'sfm_anno', 'S', 'conv_tri');
 else
+    fprintf('Loading existing sfm\n');
+    fflush(stdout);
     load(out_path, 'sfm_anno', 'S',  'conv_tri');
 end
 
