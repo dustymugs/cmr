@@ -34,7 +34,7 @@ bash install_external.sh
 1. From the `cmr` directory, download the trained model. You should see `cmr/cachedir/snapshots/bird_net/`
 ```
 wget https://people.eecs.berkeley.edu/~kanazawa/cachedir/cmr/model.tar.gz
-tar -vzxf model.tar.gz
+tar xf model.tar.gz
 ```
 
 Expected MD5 hash for model.tar.gz

@@ -21,3 +21,7 @@ ipyNb
 core
 octave-workspace
 p3d_segkps*
+
+# stuff related to CUB
+CUB_200_2011/
+attributes.txt

@@ -1,6 +1,5 @@
 function cub_sfm(split_name)
 
-addpath('../sfm');
 cub_cache_dir = fullfile(pwd, '..', '..', 'cachedir', 'cub');
 
 out_dir = fullfile(cub_cache_dir, 'sfm');
@@ -13,12 +12,11 @@ kp_names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg',
 kp_perm = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 var = load(cub_file);
 
-fprintf('CUB File: %s\n', cub_file);
-fflush(stdout);
+fprintf('CUB File: %s\n', cub_file)
+fprintf('Out Path: %s\n', out_path)
 
 if ~exist(out_path)
     fprintf('Computing new sfm\n')
-    fflush(stdout);
     kps_all = [];
     vis_all = [];
     box_scale = [];
@@ -29,6 +27,7 @@ if ~exist(out_path)
     %% Construct keypoint matrix
     n_birds = length(var.images);
     box_trans = zeros(n_birds, 2);
+    fprintf('Processing birds')
     for b = 1:n_birds
         % bbox to normalize
         bbox_h = var.images(b).bbox.y2 - var.images(b).bbox.y1 + 1;
@@ -55,15 +54,21 @@ if ~exist(out_path)
         % scatter(kps_b(1,:), kps_b(2,:));
         % hold on;
         % scatter(kps_b_flipped(1,:), kps_b_flipped(2,:));
+        if (mod(b, 100) == 0)
+            fprintf('.')
+        end
     end
+    fprintf('.\n')
 
     %% Compute mean shape and poses
+    fprintf('Compute mean shape and poses\n')
     kps_all(~vis_all) = nan;
     [~, S, ~] = sfmFactorization(kps_all, 30, 10);
     % show3dModel(S, kp_names, 'convex_hull');
     %cameratoolbar
 
     %% Align mean shape to canonical directions
+    fprintf('Align mean shape to canonical directions\n')
     good_model = 0;
     flip = 0;
     while(~good_model)
@@ -83,8 +88,7 @@ if ~exist(out_path)
     S = Srot;
     max_dist = max(pdist(S'));
     S_scale = 2. / max_dist;
-    fprintf('Scale Shape by %.2g\n', S_scale);
-    fflush(stdout);
+    fprintf('Scale Shape by %.2g\n', S_scale)
     S = S*S_scale;
     [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
@@ -114,8 +118,7 @@ if ~exist(out_path)
     conv_tri = [conv_tri(:, [1,2,3]); conv_tri(:, [1,2,4]); conv_tri(:, [1,3,4]); conv_tri(:, [4,2,3])];
     save(out_path, 'sfm_anno', 'S', 'conv_tri');
 else
-    fprintf('Loading existing sfm\n');
-    fflush(stdout);
+    fprintf('Loading existing sfm\n')
     load(out_path, 'sfm_anno', 'S',  'conv_tri');
 end
 
