@@ -1,3 +1,4 @@
+# How to build the CUB annotation mat files?
 
 ## Pre-reqs
 
@@ -22,7 +23,7 @@ Expected MD5 hash for cachedir.tar.gz
 ```
 
 #### Computing SfM
-We provide the computed SfM. If you want to compute them yourself, run via matlab:
+We provide the computed SfM. If you want to compute them yourself, run the following via matlab/octave. Note that octave is slower
 ```
 cd preprocess/cub
 main

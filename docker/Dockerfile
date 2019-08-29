@@ -5,6 +5,7 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 
 ARG python_version=3.6
+ARG miniconda_file=Miniconda3-latest-Linux-x86_64.sh
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LC_ALL C.UTF-8
@@ -24,15 +25,17 @@ RUN mkdir -p $CONDA_DIR && \
 RUN apt-get update && \
     apt-get install -y git wget curl bzip2 unzip gnupg2 tree libglib2.0 && \
     apt-get install -y libsm6 libxext6 libxrender-dev && \
+    apt-get install -y octave && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    /bin/bash ./Miniconda3-latest-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
-    conda install conda python=${python_version} six wheel numpy pillow opencv && \
-    conda clean -yt && \
-    rm Miniconda3-latest-Linux-x86_64.sh
+    mkdir /root/.conda && \
+    wget --quiet https://repo.continuum.io/miniconda/${miniconda_file} -O Miniconda3.sh && \
+    /bin/bash ./Miniconda3.sh -f -b -p $CONDA_DIR && \
+    rm Miniconda3.sh && \
+    conda install -y conda python=${python_version} six wheel numpy pillow opencv && \
+    conda clean -yt
 
 RUN conda create --name cmr python=2.7 && \
     /bin/bash -c ". activate cmr && conda install -c pytorch -y pytorch torchvision && conda clean -yt" && \

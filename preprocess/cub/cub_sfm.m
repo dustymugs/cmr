@@ -75,7 +75,7 @@ if ~exist(out_path)
         R = alignSfmModel(S, lr_edges, bf_edges, []);
         Srot = R*S;
         show3dModel(Srot, kp_names, 'convex_hull');
-        user_in = input('Is this model aligned ? "y" will save and "n" will realign after flipping \n','s');
+        user_in = input('Is this model aligned ? "y" will save and "n" will realign after flipping: ','s');
         if(strcmp(user_in,'y'))
             good_model = 1;
             disp('Ok !')
@@ -116,7 +116,10 @@ if ~exist(out_path)
     %% Compute and save convex hull
     conv_tri = delaunay(S(1,:), S(2, :), S(3, :));
     conv_tri = [conv_tri(:, [1,2,3]); conv_tri(:, [1,2,4]); conv_tri(:, [1,3,4]); conv_tri(:, [4,2,3])];
-    save(out_path, 'sfm_anno', 'S', 'conv_tri');
+    fprintf('conv_tri:\n')
+    disp(conv_tri)
+
+    save(out_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
 else
     fprintf('Loading existing sfm\n')
     load(out_path, 'sfm_anno', 'S',  'conv_tri');
