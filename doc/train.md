@@ -4,6 +4,12 @@
 
 ## Pre-reqs
 
+These instructions assume you are using the Docker Image
+
+```
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
+```
+
 ### CUB Data
 
 1. Download CUB-200-2011 images somewhere:
@@ -47,13 +53,7 @@ When prompted for 3d model alignment check, only respond ***y*** when the follow
 
 ##### Octave
 
-If you're using the Docker image, make sure you started the container as follows:
-
-```
-docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
-```
-
-Then start Octave in the Docker container:
+Start Octave in the Docker container:
 
 ```
 su -c octave - cmr
