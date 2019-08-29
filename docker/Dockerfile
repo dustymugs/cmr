@@ -16,6 +16,8 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 ENV QT_QPA_PLATFORM=offscreen
 ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
+USER root
+
 # install conda
 RUN mkdir -p $CONDA_DIR && \
     echo export PATH=$CONDA_DIR/bin:'$PATH' > /etc/profile.d/conda.sh && \
@@ -30,7 +32,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
-    mkdir /root/.conda && \
+    mkdir -p ~/.conda && \
     wget --quiet https://repo.continuum.io/miniconda/${miniconda_file} -O Miniconda3.sh && \
     /bin/bash ./Miniconda3.sh -f -b -p $CONDA_DIR && \
     rm Miniconda3.sh && \
@@ -47,5 +49,9 @@ COPY start_jupyter.sh /usr/local/bin
 # init script
 COPY init_cmr.sh /usr/local/bin
 
+# add user... purely needed for octave-gui to run from docker to X11
+RUN useradd -ms /bin/bash cmr
+
+EXPOSE 8888
 WORKDIR /projects/cmr/
 CMD ["bash"]

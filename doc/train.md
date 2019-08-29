@@ -34,7 +34,21 @@ When prompted for 3d model alignment check, only respond ***y*** when the follow
 
 * legs are negative and wings are positive along Z axis
 * beak is negative and tail is positive along Y axis
-* right side (e.g RLeg, RWing) are negative and left size (e.g. LLeg, LWing) are positive along X axis
+* right side (e.g RLeg, RWing) is negative and left size (e.g. LLeg, LWing) is positive along X axis
+
+##### Octave
+
+If you're using the Docker image, make sure you start the container as follows:
+
+```
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/Projects:/projects -p 8888:8888 cmr bash
+```
+
+Then start Octave in the Docker container:
+
+```
+su -c octave - cmr
+```
 
 ### Model training
 Change the `name` to whatever you want to call. Also see `shape.py` to adjust
