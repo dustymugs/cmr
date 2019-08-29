@@ -28,6 +28,11 @@ We provide the computed SfM. If you want to compute them yourself, run the follo
 cd preprocess/cub
 main
 ```
+When prompted for 3d model alignment check, only respond *y* when the following is correct:
+
+* legs are negative and wings are positive along Z axis
+* beak is negative and tail is positive along Y axis
+* right side (e.g RLeg, RWing) are negative and left size (e.g. LLeg, LWing) are positive along X axis
 
 ### Model training
 Change the `name` to whatever you want to call. Also see `shape.py` to adjust
