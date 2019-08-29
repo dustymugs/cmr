@@ -122,7 +122,6 @@ if ~exist(out_path)
     X = [x(:), y(:), z(:)]
 
     conv_tri_ = delaunayn(X, {'Qt', 'Qbb', 'Qc'});
-    %conv_tri_ = delaunay(X, Y, Z);
     conv_tri = [conv_tri_(:, [1,2,3]); conv_tri_(:, [1,2,4]); conv_tri_(:, [1,3,4]); conv_tri_(:, [4,2,3])];
     fprintf('conv_tri:\n')
     disp(conv_tri)
