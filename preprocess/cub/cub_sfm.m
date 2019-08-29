@@ -93,6 +93,7 @@ if ~exist(out_path)
     [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
     %%
+    fprintf('SfM Annotations\n')
     sfm_anno = struct;
     for bx = 1:n_birds
         b = 2*bx-1;
@@ -114,12 +115,19 @@ if ~exist(out_path)
     end
     
     %% Compute and save convex hull
-    conv_tri = delaunay(S(1,:), S(2, :), S(3, :));
-    conv_tri = [conv_tri(:, [1,2,3]); conv_tri(:, [1,2,4]); conv_tri(:, [1,3,4]); conv_tri(:, [4,2,3])];
+    fprintf('Compute and save convex hull\n')
+    x = S(1, :)
+    y = S(2, :)
+    z = S(3, :)
+    X = [x(:), y(:), z(:)]
+
+    conv_tri_ = delaunayn(X, {'Qt', 'Qbb', 'Qc'});
+    %conv_tri_ = delaunay(X, Y, Z);
+    conv_tri = [conv_tri_(:, [1,2,3]); conv_tri_(:, [1,2,4]); conv_tri_(:, [1,3,4]); conv_tri_(:, [4,2,3])];
     fprintf('conv_tri:\n')
     disp(conv_tri)
 
-    save(out_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
+    save(out_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
 else
     fprintf('Loading existing sfm\n')
     load(out_path, 'sfm_anno', 'S',  'conv_tri');

@@ -5,15 +5,19 @@
 ## Pre-reqs
 
 ### CUB Data
+
 1. Download CUB-200-2011 images somewhere:
+
 ```
+cd /cmr
 wget http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz
 tar xf CUB_200_2011.tgz
 ```
 
 2. Download our CUB annotation mat files and pre-computed SfM outputs.
-Do this from the `cmr/` directory, and this should make `cmr/cachedir` directory:
+
 ```
+cd /cmr
 wget https://people.eecs.berkeley.edu/~shubhtuls/cachedir/cmr/cachedir.tar.gz
 tar xf cachedir.tar.gz
 ```
@@ -25,11 +29,16 @@ Expected MD5 hash for cachedir.tar.gz
 ```
 
 #### Computing SfM
-We provide the computed SfM. If you want to compute them yourself, run the following via matlab/octave. Note that octave is slower
+
+We provide the computed SfM. If you want to compute them yourself, run the following. Note that octave is slower
+
+From MatLab or Octave, run:
+
 ```
-cd preprocess/cub
+cd /cmr/preprocess/cub
 main
 ```
+
 When prompted for 3d model alignment check, only respond ***y*** when the following is correct:
 
 * legs are negative and wings are positive along Z axis
@@ -38,10 +47,10 @@ When prompted for 3d model alignment check, only respond ***y*** when the follow
 
 ##### Octave
 
-If you're using the Docker image, make sure you start the container as follows:
+If you're using the Docker image, make sure you started the container as follows:
 
 ```
-docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/Projects:/projects -p 8888:8888 cmr bash
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
 ```
 
 Then start Octave in the Docker container:
@@ -57,19 +66,24 @@ want better texture, increase texture resolution with `tex_size`).
 See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training options.
 
 ```
-cmd='python -m cmr.experiments.shape --name=bird_net --display_port 8087'
+cd /
+python -m cmr.experiments.shape --name=bird_net --display_port 8087
 ```
 
 ### Evaluation
 We provide evaluation code to compute the IOU curves in the paper.
 Command below runs the model with different ablation settings.
 Run it from one directory above the `cmr` directory.
+
 ```
+cd /
 python -m cmr.benchmark.run_evals --split val  --name bird_net --num_train_epoch 500
 ```
 
 Then, run 
+
 ```
+cd /
 python -m cmr.benchmark.plot_curvess --split val  --name bird_net --num_train_epoch 500
 ```
 in order to see the IOU curve.
