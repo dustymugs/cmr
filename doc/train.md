@@ -1,4 +1,6 @@
-# How to build the CUB annotation mat files?
+## Big questions
+
+* Build the CUB annotation mat files
 
 ## Pre-reqs
 
@@ -28,7 +30,7 @@ We provide the computed SfM. If you want to compute them yourself, run the follo
 cd preprocess/cub
 main
 ```
-When prompted for 3d model alignment check, only respond *y* when the following is correct:
+When prompted for 3d model alignment check, only respond ***y*** when the following is correct:
 
 * legs are negative and wings are positive along Z axis
 * beak is negative and tail is positive along Y axis
