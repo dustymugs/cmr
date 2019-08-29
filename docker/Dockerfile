@@ -1,5 +1,5 @@
 #
-# docker build -f Dockerfile-gpu -t pytorch-gpu .
+# docker build -f Dockerfile -t cmr .
 #
 
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
