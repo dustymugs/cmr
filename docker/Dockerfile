@@ -53,5 +53,7 @@ COPY init_cmr.sh /usr/local/bin
 RUN useradd -ms /bin/bash cmr
 
 EXPOSE 8888
+EXPOSE 8097
+
 WORKDIR /cmr/
 CMD ["bash"]
