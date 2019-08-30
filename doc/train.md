@@ -5,7 +5,7 @@
 These instructions assume you are using the Docker Image
 
 ```
-docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 -p 8097:8097 cmr bash
 ```
 
 ### CUB Data
