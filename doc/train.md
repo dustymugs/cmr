@@ -66,7 +66,7 @@ ans =  500
 >> images(1).height
 ans =  336
 ```
-  * parts - locations of the bird's keypoints/landmarks in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X, element 2 = Y, element 3 = "is present" boolean flag
+  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X, element 2 = Y, element 3 = "is present" boolean flag
 ```
 >> images(1).parts
 ans =
@@ -187,10 +187,57 @@ Variables in the current scope:
         sfm_anno(1).trans      2x1                         16  double
 ```
 
+#### Details of `S` array
 
+`S` is the mean shape built from the shapes of all training data. The vertices of the mean shape are the mean positions of the  keypoints
 
+```
+>> S
+S =
 
+ Columns 1 through 14:
 
+   3.6065e-16  -8.9135e-16   2.9800e-16  -5.5840e-17  -3.3744e-16  -6.6210e-16   1.9574e-02   2.7820e-01   3.6425e-01   1.9550e-16  -1.9574e-02  -2.7820e-01  -3.6425e-01   8.5400e-16
+   1.3454e-01  -6.4203e-01   1.9811e-01  -1.6509e-01  -4.9102e-01  -5.9724e-01  -4.7580e-01   6.0424e-01   2.8694e-01  -1.8298e-01  -4.7580e-01   6.0424e-01   2.8694e-01   1.3329e+00
+   2.6966e-01  -4.6560e-02  -3.6491e-01  -2.7358e-01   2.6940e-01   1.1551e-01   1.3329e-01  -4.6213e-01   1.1462e-01   2.4593e-01   1.3329e-01  -4.6213e-01   1.1462e-01   2.6940e-01
+
+ Column 15:
+
+  -5.0415e-16
+  -4.1792e-01
+  -5.6380e-02
+
+>> whos('S')
+Variables in the current scope:
+
+   Attr Name        Size                     Bytes  Class
+   ==== ====        ====                     =====  =====
+        S           3x15                       360  double
+```
+
+#### Details of `conv_tri` array
+
+`conv_tri` is the convex hull of the mean shape `S`
+
+```
+>> conv_tri
+conv_tri =
+
+    4    2    8
+    4   12    2
+    1   14    9
+    ...
+   10    7    9
+   10    1    9
+   10    1   13
+
+>> whos('conv_tri')
+Variables in the current scope:
+
+   Attr Name          Size                     Bytes  Class
+   ==== ====          ====                     =====  =====
+        conv_tri    144x3                       3456  double
+```
 
 
 
