@@ -34,7 +34,7 @@ Expected MD5 hash for cachedir.tar.gz
 
 #### Computing SfM
 
-We provide the computed SfM. If you want to compute them yourself, run the following. Note that octave is slower
+We provide the computed SfM. If you want to compute them yourself, run the following. Note that Octave is slower than MatLab but it's free.
 
 From MatLab or Octave, run:
 
