@@ -1,8 +1,10 @@
 ## Big questions
 
-* Build the CUB annotation mat files
-  * in the CUB annotation mat files, all pixel coordinates are 1-based (vs the normal 0-based for X and Y axes)
-  * `train_cub_cleaned.mat` and `testval_cub_cleaned.mat` have same structure and contain only one variable:
+### What are the CUB annotation mat files?
+  * in the CUB annotation mat files, all pixel coordinates are **1-based** (vs the normal 0-based for X and Y axes)
+  * `train_cub_cleaned.mat` and `testval_cub_cleaned.mat` have same structure and contain only one variable: `images`
+
+#### Details of `images` struct array
 ```
 images = 
 
@@ -20,6 +22,8 @@ images =
     class_id
 ```
 
+##### Fields of `images` struct array
+
   * id - row identifier (integer autonumber?)
 ```
 >> images(1).id
@@ -30,12 +34,12 @@ ans = 2
 >> images(1).rel_path
 ans = 001.Black_footed_Albatross/Black_Footed_Albatross_0009_34.jpg
 ```
-  * train - boolean flag indicating if row is part of training dataset
+  * train - 0/1 flag indicating if row is part of training dataset
 ```
 >> images(1).train
 ans = 1
 ```
-  * test - boolean flag indicating if row is part of training dataset
+  * test - 0/1 flag indicating if row is part of training dataset
 ```
 >> images(1).test
 ans = 0
@@ -78,7 +82,7 @@ Variables in the current scope:
    ==== ====                 ====                     =====  =====
         images(1).parts      3x15                       360  double
 ```
-  * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean array of same dimension as image indicating which pixels are masked
+  * mask - segmentation mask of the bird in the image from Mask-RCNN. A 0/1 array of same dimension as image indicating which pixels are masked
 
 ```
 >> images(1).mask
@@ -86,7 +90,8 @@ ans =
 
  Columns 1 through 63:
 
-  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0 ...
+  0  0  0  0  0  0  0 ...
+  ...
 
 >> whos('images(1).mask')
 Variables in the current scope:
@@ -100,6 +105,14 @@ Variables in the current scope:
 >> images(1).class_id
 ans = 1
 ```
+##### Required fields of `images` struct array
+
+Only the following fields are actually consumed by BaseDataset (and descendent) class:
+* rel_path
+* mask
+* bbox
+* parts
+
 
 ## Pre-reqs
 
