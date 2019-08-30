@@ -9,6 +9,7 @@ ipyNb
 *.key
 *.out
 *.gz
+*.t*gz
 *.blg
 *.aux
 *.bbl
@@ -16,4 +17,11 @@ ipyNb
 *.pdf
 *.texnicle
 *.fdb_latexmk
+*.sw*
+core
+octave-workspace
+p3d_segkps*
 
+# stuff related to CUB
+CUB_200_2011/
+attributes.txt

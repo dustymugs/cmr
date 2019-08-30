@@ -10,35 +10,36 @@ function [c, R, t, err_val] = reprojMaskMinimize(P, S, mask, c_init, R_init, t_i
     x_init = [c_init' t_init' q_init];
 
     mask_dist = bwdist(mask);
-    function err = reprojError(x)
-        c_iter = x(1);
-        t_iter = x(2:3);
-        q_iter = x(:, 4:7); q_iter = q_iter/norm(q_iter);
-        R_iter = quat2dcm(q_iter); R_iter = R_iter(1:2, :);
 
-        proj_vis = c_iter*R_iter*S_vis;
-        proj_vis = proj_vis + t_iter';
-        err_kp = proj_vis - P_vis;
-        err_kp = sum(sum(err_kp.*err_kp));
-        
-        proj_non_vis = c_iter*R_iter*S_non_vis;
-        proj_non_vis = proj_non_vis + t_iter';
-        if ~isempty(proj_non_vis)
-            err_mask = chamferLossInterp(mask_dist, proj_non_vis);
-        else
-            err_mask = 0;
-        end
-        err = err_kp + double(err_mask);
-    end
-    
     %disp(reprojError(x_init));
-    [x_final, err_val] = fminunc(@reprojError, x_init);
+    f = @(x) reprojMaskMinimizeError(x, S_vis, P_vis, S_non_vis, mask_dist);
+    [x_final, err_val] = fminunc(f, x_init);
     %disp(reprojError(x_final));
     c = x_final(1);
     t = x_final(2:3);
     R = quat2dcm(x_final(4:7));
 end
 
+function err = reprojMaskMinimizeError(x, S_vis, P_vis, S_non_vis, mask_dist)
+    c_iter = x(1);
+    t_iter = x(2:3);
+    q_iter = x(:, 4:7); q_iter = q_iter/norm(q_iter);
+    R_iter = quat2dcm(q_iter); R_iter = R_iter(1:2, :);
+
+    proj_vis = c_iter*R_iter*S_vis;
+    proj_vis = proj_vis + t_iter';
+    err_kp = proj_vis - P_vis;
+    err_kp = sum(sum(err_kp.*err_kp));
+    
+    proj_non_vis = c_iter*R_iter*S_non_vis;
+    proj_non_vis = proj_non_vis + t_iter';
+    if ~isempty(proj_non_vis)
+        err_mask = chamferLossInterp(mask_dist, proj_non_vis);
+    else
+        err_mask = 0;
+    end
+    err = err_kp + double(err_mask);
+end
 
 function err_chamfer = chamferLoss(mask_dist, points)
     err_chamfer = 0;

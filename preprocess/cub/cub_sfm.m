@@ -1,6 +1,5 @@
 function cub_sfm(split_name)
 
-addpath('../sfm');
 cub_cache_dir = fullfile(pwd, '..', '..', 'cachedir', 'cub');
 
 out_dir = fullfile(cub_cache_dir, 'sfm');
@@ -13,7 +12,8 @@ kp_names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg',
 kp_perm = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 var = load(cub_file);
 
-n_birds = length(var.images);
+fprintf('CUB File: %s\n', cub_file)
+fprintf('Out Path: %s\n', out_path)
 
 if ~exist(out_path)
     fprintf('Computing new sfm\n')
@@ -25,7 +25,10 @@ if ~exist(out_path)
     bf_edges = [14 5]; % back to front edges (along -Y)
 
     %% Construct keypoint matrix
+    fprintf('Construct keypoint matrix\n')
+    n_birds = length(var.images);
     box_trans = zeros(n_birds, 2);
+    fprintf('Processing birds')
     for b = 1:n_birds
         % bbox to normalize
         bbox_h = var.images(b).bbox.y2 - var.images(b).bbox.y1 + 1;
@@ -52,22 +55,28 @@ if ~exist(out_path)
         % scatter(kps_b(1,:), kps_b(2,:));
         % hold on;
         % scatter(kps_b_flipped(1,:), kps_b_flipped(2,:));
+        if (mod(b, 100) == 0)
+            fprintf('.')
+        end
     end
+    fprintf('.\n')
 
     %% Compute mean shape and poses
+    fprintf('Compute mean shape and poses\n')
     kps_all(~vis_all) = nan;
     [~, S, ~] = sfmFactorization(kps_all, 30, 10);
     % show3dModel(S, kp_names, 'convex_hull');
     %cameratoolbar
 
     %% Align mean shape to canonical directions
+    fprintf('Align mean shape to canonical directions\n')
     good_model = 0;
     flip = 0;
     while(~good_model)
         R = alignSfmModel(S, lr_edges, bf_edges, []);
         Srot = R*S;
         show3dModel(Srot, kp_names, 'convex_hull');
-        user_in = input('Is this model aligned ? "y" will save and "n" will realign after flipping \n','s');
+        user_in = input('Is this model aligned ? "y" will save and "n" will realign after flipping: ','s');
         if(strcmp(user_in,'y'))
             good_model = 1;
             disp('Ok !')
@@ -80,11 +89,12 @@ if ~exist(out_path)
     S = Srot;
     max_dist = max(pdist(S'));
     S_scale = 2. / max_dist;
-    fprintf('Scale Shape by %.2g\n', S_scale);
+    fprintf('Scale Shape by %.2g\n', S_scale)
     S = S*S_scale;
     [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
     %%
+    fprintf('SfM of each bird as transformation from mean shape\n')
     sfm_anno = struct;
     for bx = 1:n_birds
         b = 2*bx-1;
@@ -106,10 +116,21 @@ if ~exist(out_path)
     end
     
     %% Compute and save convex hull
-    conv_tri = delaunay(S(1,:), S(2, :), S(3, :));
-    conv_tri = [conv_tri(:, [1,2,3]); conv_tri(:, [1,2,4]); conv_tri(:, [1,3,4]); conv_tri(:, [4,2,3])];
-    save(out_path, 'sfm_anno', 'S', 'conv_tri');
+    fprintf('Compute convex hull\n')
+    x = S(1, :)
+    y = S(2, :)
+    z = S(3, :)
+    X = [x(:), y(:), z(:)]
+
+    conv_tri_ = delaunayn(X, {'Qt', 'Qbb', 'Qc'});
+    conv_tri = [conv_tri_(:, [1,2,3]); conv_tri_(:, [1,2,4]); conv_tri_(:, [1,3,4]); conv_tri_(:, [4,2,3])];
+    fprintf('conv_tri:\n')
+    disp(conv_tri)
+
+    %save(out_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
+    save(out_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
 else
+    fprintf('Loading existing sfm\n')
     load(out_path, 'sfm_anno', 'S',  'conv_tri');
 end
 

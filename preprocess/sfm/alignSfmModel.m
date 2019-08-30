@@ -51,14 +51,26 @@ for d = 2:3
 end
 
 %% computing rotation x axis as mirror axis
-Rx = vrrotvec2mat(vrrotvec(directions(:,1),directionsTarget(:,1)));
+fprintf('directions(:,1):\n')
+disp(directions(:,1))
+fprintf('directionsTarget(:,1):\n')
+disp(directionsTarget(:,1))
+Rx = vecrotmat(directions(:,1), directionsTarget(:,1));
+fprintf('Rx:\n')
+disp(Rx)
 
 %% other direction    
 R = Rx;
 directions = Rx*directions;
 for d=2:3
     if(isAvailable(d))
-        Ryz = vrrotvec2mat(vrrotvec(directions(:,d),directionsTarget(:,d)));
+        fprintf('directions(:,%d):\n', d)
+        disp(directions(:,d))
+        fprintf('directionsTarget(:,%d):\n', d)
+        disp(directionsTarget(:,d))
+        Ryz = vecrotmat(directions(:,d), directionsTarget(:,d));
+        fprintf('Ryz %d:\n', d)
+        disp(Ryz)
         R = Ryz*R;
         directions = Ryz*directions;
         return
