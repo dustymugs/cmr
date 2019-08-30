@@ -2,13 +2,13 @@
 
 ### What are the CUB annotation mat files?
   * in the CUB annotation mat files, all pixel coordinates are **1-based** (vs the normal 0-based for X and Y axes)
-  * `train_cub_cleaned.mat` and `testval_cub_cleaned.mat` have same structure and contain only one variable: `images`
+  * All CUB annotation mat files (e.g. `train_cub_cleaned.mat`, `testval_cub_cleaned.mat`) contain only one variable: `images`
 
 #### Details of `images` struct array
 ```
 images = 
 
-  1×5747 struct array with fields:
+  1×5747 struct array containing the fields:
 
     id
     rel_path
@@ -112,6 +112,90 @@ Only the following fields are actually consumed by BaseDataset (and descendent) 
 * mask
 * bbox
 * parts
+
+### What are the CUB sfm mat files?
+
+  * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these variables: `sfm_anno`, `S`, `conv_tri`
+
+#### Details of `sfm_anno` struct array
+
+`sfm_anno` contains information required to transform the mean shape to each bird's unique shape
+
+```
+>> sfm_anno
+sfm_anno =
+
+  1x5964 struct array containing the fields:
+
+    rot
+    scale
+    trans
+
+>> whos('sfm_anno')
+Variables in the current scope:
+
+   Attr Name          Size                     Bytes  Class
+   ==== ====          ====                     =====  =====
+        sfm_anno      1x5964                  572544  struct
+
+Total is 5964 elements using 572544 bytes
+```
+
+##### Fields of `sfm_anno` struct array
+
+ * rot - rotation
+```
+>> sfm_anno(1).rot
+ans =
+
+  -0.303131  -0.807023   0.506780
+  -0.910085   0.087464  -0.405086
+   0.282589  -0.584007  -0.760973
+
+>> whos('sfm_anno(1).rot')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        sfm_anno(1).rot      3x3                         72  double
+```
+ * scale - scale
+```
+>> sfm_anno(1).scale
+ans =  81.948
+
+>> whos('sfm_anno(1).scale')
+Variables in the current scope:
+
+   Attr Name                   Size                     Bytes  Class
+   ==== ====                   ====                     =====  =====
+        sfm_anno(1).scale      1x1                          8  double
+```
+ * trans - translation
+```
+>> sfm_anno(1).trans
+ans =
+
+   234.27
+   151.87
+
+>> whos('sfm_anno(1).trans')
+Variables in the current scope:
+
+   Attr Name                   Size                     Bytes  Class
+   ==== ====                   ====                     =====  =====
+        sfm_anno(1).trans      2x1                         16  double
+```
+
+
+
+
+
+
+
+
+
+
 
 
 ## Pre-reqs
