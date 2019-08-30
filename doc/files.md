@@ -107,7 +107,7 @@ ans = 1
 ```
 #### Required fields of `images` struct array
 
-Only the following fields are actually consumed by CMR:
+The following fields are required for CMR training:
 * rel_path
 * mask
 * bbox
@@ -115,7 +115,7 @@ Only the following fields are actually consumed by CMR:
 
 ## CUB SfM annotations mat files
 
-  * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these variables: `sfm_anno`, `S`, `conv_tri`
+  * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these three variables: `sfm_anno`, `S`, `conv_tri`. These three variables are required for CMR training.
 
 ### Details of `sfm_anno` struct array
 
