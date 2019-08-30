@@ -1,6 +1,105 @@
 ## Big questions
 
 * Build the CUB annotation mat files
+  * in the CUB annotation mat files, all pixel coordinates are 1-based (vs the normal 0-based for X and Y axes)
+  * `train_cub_cleaned.mat` and `testval_cub_cleaned.mat` have same structure and contain only one variable:
+```
+images = 
+
+  1×5747 struct array with fields:
+
+    id
+    rel_path
+    train
+    test
+    bbox
+    width
+    height
+    parts
+    mask
+    class_id
+```
+
+  * id - row identifier (integer autonumber?)
+```
+>> images(1).id
+ans = 2
+```
+  * rel_path - relative path to image data
+```
+>> images(1).rel_path
+ans = 001.Black_footed_Albatross/Black_Footed_Albatross_0009_34.jpg
+```
+  * train - boolean flag indicating if row is part of training dataset
+```
+>> images(1).train
+ans = 1
+```
+  * test - boolean flag indicating if row is part of training dataset
+```
+>> images(1).test
+ans = 0
+```
+  * bbox - bounding box of the bird in image in pixel coordinates
+```
+>> images(1).bbox
+ans =
+
+  scalar structure containing the fields:
+
+    x1 = 139
+    y1 = 30
+    x2 = 291
+    y2 = 293
+```
+  * width - width of image. number of pixels along the X axis
+```
+>> images(1).width
+ans =  500
+```
+  * height - height of image. number of pixels along the Y axis
+```
+>> images(1).height
+ans =  336
+```
+  * parts - locations of the bird's keypoints/landmarks in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X, element 2 = Y, element 3 = "is present" boolean flag
+```
+>> images(1).parts
+ans =
+
+   228   282     0   248   266   272     0     0   208   256   270     0   234   163   260
+   138   154     0   158   141   144     0     0   102   141   146     0   193   155   155
+     1     1     0     1     1     1     0     0     1     1     1     0     1     1     1
+
+>> whos('images(1).parts')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        images(1).parts      3x15                       360  double
+```
+  * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean array of same dimension as image indicating which pixels are masked
+
+```
+>> images(1).mask
+ans =
+
+ Columns 1 through 63:
+
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0 ...
+
+>> whos('images(1).mask')
+Variables in the current scope:
+
+   Attr Name                Size                     Bytes  Class
+   ==== ====                ====                     =====  =====
+        images(1).mask    336x500                   168000  logical
+```
+  * class_id - the class (bird types) of the bird in the image from the CUB dataset
+```
+>> images(1).class_id
+ans = 1
+```
 
 ## Pre-reqs
 
