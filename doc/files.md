@@ -107,7 +107,7 @@ ans = 1
 ```
 #### Required fields of `images` struct array
 
-Only the following fields are actually consumed by BaseDataset (and descendent) class:
+Only the following fields are actually consumed by CMR:
 * rel_path
 * mask
 * bbox
