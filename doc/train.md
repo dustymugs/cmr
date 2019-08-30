@@ -65,7 +65,13 @@ See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training o
 
 ```
 cd /
-python -m cmr.experiments.shape --name=bird_net --display_port 8087
+python -m cmr.experiments.shape --name=bird_net --display_port 8097
+```
+
+To monitor training progress, use your browser to connect to the Visdom server at port 8097
+
+```
+http://localhost:8097
 ```
 
 ### Evaluation
