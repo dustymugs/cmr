@@ -1,10 +1,10 @@
 # Data File Structures
 
-### CUB annotation mat files
+## CUB annotation mat files
   * in the CUB annotation mat files, all pixel coordinates are **1-based** (vs the normal 0-based for X and Y axes)
   * All CUB annotation mat files (e.g. `train_cub_cleaned.mat`, `testval_cub_cleaned.mat`) contain only one variable: `images`
 
-#### Details of `images` struct array
+### Details of `images` struct array
 ```
 images = 
 
@@ -22,7 +22,7 @@ images =
     class_id
 ```
 
-##### Fields of `images` struct array
+#### Fields of `images` struct array
 
   * id - row identifier (integer autonumber?)
 ```
@@ -105,7 +105,7 @@ Variables in the current scope:
 >> images(1).class_id
 ans = 1
 ```
-##### Required fields of `images` struct array
+#### Required fields of `images` struct array
 
 Only the following fields are actually consumed by BaseDataset (and descendent) class:
 * rel_path
@@ -113,11 +113,11 @@ Only the following fields are actually consumed by BaseDataset (and descendent) 
 * bbox
 * parts
 
-### CUB SfM annotations mat files
+## CUB SfM annotations mat files
 
   * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these variables: `sfm_anno`, `S`, `conv_tri`
 
-#### Details of `sfm_anno` struct array
+### Details of `sfm_anno` struct array
 
 `sfm_anno` contains information required to transform the mean shape to each bird's unique shape
 
@@ -141,7 +141,7 @@ Variables in the current scope:
 Total is 5964 elements using 572544 bytes
 ```
 
-##### Fields of `sfm_anno` struct array
+#### Fields of `sfm_anno` struct array
 
  * rot - rotation
 ```
@@ -187,7 +187,7 @@ Variables in the current scope:
         sfm_anno(1).trans      2x1                         16  double
 ```
 
-#### Details of `S` array
+### Details of `S` array
 
 `S` is the mean shape built from the shapes of all training data. The vertices of the mean shape are the mean positions of the  keypoints
 
@@ -215,7 +215,7 @@ Variables in the current scope:
         S           3x15                       360  double
 ```
 
-#### Details of `conv_tri` array
+### Details of `conv_tri` array
 
 `conv_tri` is the convex hull of the mean shape `S`
 
