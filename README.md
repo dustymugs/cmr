@@ -15,6 +15,12 @@ Use the Docker image provided as it contains:
 - All scripts/tooling required to run CMR
 - Octave for running the preprocess steps
 
+#### Pull Docker Image
+
+```
+docker pull dustymugs/cmr
+```
+
 #### Start Docker Container
 
 ```
