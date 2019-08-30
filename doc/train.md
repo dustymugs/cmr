@@ -5,7 +5,7 @@
 These instructions assume you are using the Docker Image
 
 ```
-docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 -p 8097:8097 cmr bash
 ```
 
 ### CUB Data
@@ -18,7 +18,7 @@ wget http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz
 tar xf CUB_200_2011.tgz
 ```
 
-2. Download our CUB annotation mat files and pre-computed SfM outputs.  For structural details regarding these files, read [Data File Structures](files.md)
+2. Download our CUB annotation mat files and pre-computed SfM outputs.  For structural details regarding these files, read [doc/files.md](files.md)
 
 ```
 cd /cmr
@@ -34,7 +34,7 @@ Expected MD5 hash for cachedir.tar.gz
 
 #### Computing SfM
 
-We provide the computed SfM. If you want to compute them yourself, run the following. Note that octave is slower
+We provide the computed SfM. If you want to compute them yourself, run the following. Note that Octave is slower than MatLab but it's free.
 
 From MatLab or Octave, run:
 
@@ -47,7 +47,7 @@ When prompted for 3d model alignment check, only respond ***y*** when the follow
 
 * legs are negative and wings are positive along Z axis
 * beak is negative and tail is positive along Y axis
-* right side (e.g RLeg, RWing) is negative and left size (e.g. LLeg, LWing) is positive along X axis
+* right side (e.g `RLeg`, `RWing`) is negative and left size (e.g. `LLeg`, `LWing`) is positive along X axis
 
 ##### Octave
 
@@ -65,7 +65,13 @@ See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training o
 
 ```
 cd /
-python -m cmr.experiments.shape --name=bird_net --display_port 8087
+python -m cmr.experiments.shape --name=bird_net --display_port 8097
+```
+
+To monitor training progress, use your browser to connect to the Visdom server at port 8097
+
+```
+http://localhost:8097
 ```
 
 ### Evaluation

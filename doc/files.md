@@ -34,12 +34,12 @@ ans = 2
 >> images(1).rel_path
 ans = 001.Black_footed_Albatross/Black_Footed_Albatross_0009_34.jpg
 ```
-  * train - 0/1 flag indicating if row is part of training dataset
+  * train - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).train
 ans = 1
 ```
-  * test - 0/1 flag indicating if row is part of training dataset
+  * test - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).test
 ans = 0
@@ -82,7 +82,7 @@ Variables in the current scope:
    ==== ====                 ====                     =====  =====
         images(1).parts      3x15                       360  double
 ```
-  * mask - segmentation mask of the bird in the image from Mask-RCNN. A 0/1 array of same dimension as image indicating which pixels are masked
+  * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean (0/1) array of same dimension as image indicating which pixels are masked
 
 ```
 >> images(1).mask
@@ -107,7 +107,7 @@ ans = 1
 ```
 #### Required fields of `images` struct array
 
-Only the following fields are actually consumed by BaseDataset (and descendent) class:
+The following fields are required for CMR training:
 * rel_path
 * mask
 * bbox
@@ -115,7 +115,7 @@ Only the following fields are actually consumed by BaseDataset (and descendent) 
 
 ## CUB SfM annotations mat files
 
-  * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these variables: `sfm_anno`, `S`, `conv_tri`
+  * All CUB sfm mat files (e.g. `anno_train.mat`) contain at least these three variables: `sfm_anno`, `S`, `conv_tri`. These three variables are required for CMR training.
 
 ### Details of `sfm_anno` struct array
 
