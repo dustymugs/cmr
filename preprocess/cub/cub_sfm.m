@@ -126,7 +126,8 @@ if ~exist(out_path)
     fprintf('conv_tri:\n')
     disp(conv_tri)
 
-    save(out_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
+    %save(out_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
+    save(out_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
 else
     fprintf('Loading existing sfm\n')
     load(out_path, 'sfm_anno', 'S',  'conv_tri');
