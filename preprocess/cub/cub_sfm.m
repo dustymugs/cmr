@@ -25,6 +25,7 @@ if ~exist(out_path)
     bf_edges = [14 5]; % back to front edges (along -Y)
 
     %% Construct keypoint matrix
+    fprintf('Construct keypoint matrix\n')
     n_birds = length(var.images);
     box_trans = zeros(n_birds, 2);
     fprintf('Processing birds')
@@ -93,7 +94,7 @@ if ~exist(out_path)
     [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
     %%
-    fprintf('SfM Annotations\n')
+    fprintf('SfM of each bird as transformation from mean shape\n')
     sfm_anno = struct;
     for bx = 1:n_birds
         b = 2*bx-1;
@@ -115,7 +116,7 @@ if ~exist(out_path)
     end
     
     %% Compute and save convex hull
-    fprintf('Compute and save convex hull\n')
+    fprintf('Compute convex hull\n')
     x = S(1, :)
     y = S(2, :)
     z = S(3, :)
