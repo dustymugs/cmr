@@ -2,13 +2,13 @@
 
 This repo is a fork of the [main project repo](https://github.com/akanazawa/cmr) for CMR. This repo has the following goals:
 
-[X] Docker image to sandbox the project
-[X] Octave support as alternative to MatLab
-[X] Add and enhance documentation with regards to training and data files
-[ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
-[ ] Updated Python dependencies
-[ ] Python3 support
-[ ] Implement Library/API patterns
+- [X] Docker image to sandbox the project
+- [X] Octave support as alternative to MatLab
+- [X] Add and enhance documentation with regards to training and data files
+- [ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
+- [ ] Updated Python dependencies
+- [ ] Python3 support
+- [ ] Implement Library/API patterns
 
 # Learning Category-Specific Mesh Reconstruction from Image Collections
 
