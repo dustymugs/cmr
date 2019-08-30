@@ -19,7 +19,7 @@ Use the Docker image provided as it contains:
 
 ```
 cd /cmr
-docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 cmr bash
+docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 -p 8097:8097 cmr bash
 ```
 
 #### Install CMR Dependencies
