@@ -47,7 +47,7 @@ When prompted for 3d model alignment check, only respond ***y*** when the follow
 
 * legs are negative and wings are positive along Z axis
 * beak is negative and tail is positive along Y axis
-* right side (e.g RLeg, RWing) is negative and left size (e.g. LLeg, LWing) is positive along X axis
+* right side (e.g `RLeg`, `RWing`) is negative and left size (e.g. `LLeg`, `LWing`) is positive along X axis
 
 ##### Octave
 
