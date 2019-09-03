@@ -2,7 +2,7 @@
 
 source activate cmr
 
-cd /projects/cmr
+cd /cmr
 pip install --no-cache-dir -r requirements.txt
 cd external
 rm -rf PerceptualSimilarity/ neural_renderer/

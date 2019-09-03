@@ -22,7 +22,7 @@ tar xf CUB_200_2011.tgz
 
 ```
 cd /cmr
-wget https://people.eecs.berkeley.edu/~shubhtuls/cachedir/cmr/cachedir.tar.gz
+wget https://drive.google.com/open?id=1aTymi_4runy8g9PbZkRauwdTeFoLwAdo
 tar xf cachedir.tar.gz
 ```
 

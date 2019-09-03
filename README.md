@@ -44,7 +44,7 @@ This will install all the requirements of CMR and external dependencies (e.g. Ne
 
 ```
 cd /cmr
-wget https://people.eecs.berkeley.edu/~kanazawa/cachedir/cmr/model.tar.gz
+wget https://drive.google.com/open?id=1Fz3FjmHTDDKQP-vcXKEPlA2hHttRvOdc
 tar xf model.tar.gz
 ```
 
