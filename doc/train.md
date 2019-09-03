@@ -58,7 +58,7 @@ su -c octave - cmr
 ```
 
 ### Model training
-Change the `name` to whatever you want to call. Also see `shape.py` to adjust
+Change the value of `--name` to whatever you want to call. Also see `experiments/shape.py` to adjust
 hyper-parameters (for eg. increase `tex_loss_wt` and `text_dt_loss_wt` if you
 want better texture, increase texture resolution with `tex_size`).
 See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training options.
