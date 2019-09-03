@@ -49,7 +49,7 @@ Once within the Docker Container, run:
 init_cmr.sh
 ```
 
-This will install all the requirements of CMR and external dependencies (e.g. Neural Mesh Renderer and Perceptual loss)
+This will install all the requirements of CMR and external dependencies (e.g. Perceptual loss)
 
 ### Demo
 
