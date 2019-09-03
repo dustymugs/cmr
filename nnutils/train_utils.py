@@ -53,7 +53,7 @@ flags.DEFINE_integer('display_single_pane_ncols', 0, 'if positive, display all i
 
 #-------- tranining class ---------#
 #----------------------------------#
-class Trainer():
+class Trainer(object):
     def __init__(self, opts):
         self.opts = opts
         self.gpu_id = opts.gpu_id
@@ -151,7 +151,8 @@ class Trainer():
                 if not self.invalid_batch:
                     self.optimizer.zero_grad()
                     self.forward()
-                    self.smoothed_total_loss = self.smoothed_total_loss*0.99 + 0.01*self.total_loss.data[0]
+                    self.smoothed_total_loss = \
+                        self.smoothed_total_loss * 0.99 + 0.01 * self.total_loss.data.item()
                     self.total_loss.backward()
                     # pdb.set_trace()
                     self.optimizer.step()

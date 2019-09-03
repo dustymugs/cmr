@@ -313,12 +313,13 @@ class LaplacianLoss(object):
     def __init__(self, faces):
         # Input:
         #  faces: B x F x 3
-        from ..nnutils.laplacian import Laplacian
+        from .laplacian import Laplacian
         # V x V
         self.laplacian = Laplacian(faces)
         self.Lx = None
 
     def __call__(self, verts):
+        import ipdb;ipdb.set_trace()
         self.Lx = self.laplacian(verts)
         # Reshape to BV x 3
         Lx = self.Lx.view(-1, self.Lx.size(2))
@@ -348,7 +349,7 @@ class LaplacianLoss(object):
 
 class PerceptualTextureLoss(object):
     def __init__(self):
-        from ..nnutils.perceptual_loss import PerceptualLoss
+        from .perceptual_loss import PerceptualLoss
         self.perceptual_loss = PerceptualLoss()
 
     def __call__(self, img_pred, img_gt, mask_pred, mask_gt):

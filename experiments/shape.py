@@ -21,7 +21,6 @@ import os.path as osp
 import numpy as np
 import torch
 import torchvision
-from torch.autograd import Variable
 import scipy.io as sio
 from collections import OrderedDict
 
@@ -75,12 +74,16 @@ class ShapeTrainer(train_utils.Trainer):
 
         # Data structures to use for triangle priors.
         edges2verts = self.model.edges2verts
+
         # B x E x 4
         edges2verts = np.tile(np.expand_dims(edges2verts, 0), (opts.batch_size, 1, 1))
-        self.edges2verts = Variable(torch.LongTensor(edges2verts).cuda(device=opts.gpu_id), requires_grad=False)
+        self.edges2verts = torch.from_numpy(edges2verts).cuda(device=opts.gpu_id)
+
         # For renderering.
         faces = self.model.faces.view(1, -1, 3)
         self.faces = faces.repeat(opts.batch_size, 1, 1)
+
+        # TODO: autograd.Function
         self.renderer = NeuralRenderer(opts.img_size)
         self.renderer_predcam = NeuralRenderer(opts.img_size) #for camera loss via projection
 
@@ -112,6 +115,8 @@ class ShapeTrainer(train_utils.Trainer):
         self.entropy_loss = loss_utils.entropy_loss
         self.deform_reg_fn = loss_utils.deform_l2reg
         self.camera_loss = loss_utils.camera_loss
+
+        # TODO: autograd.Function
         self.triangle_loss_fn = loss_utils.LaplacianLoss(self.faces)
 
         if self.opts.texture:
@@ -131,22 +136,19 @@ class ShapeTrainer(train_utils.Trainer):
         kp_tensor = batch['kp'].type(torch.FloatTensor)
         cam_tensor = batch['sfm_pose'].type(torch.FloatTensor)
 
-        self.input_imgs = Variable(
-            input_img_tensor.cuda(device=opts.gpu_id), requires_grad=False)
-        self.imgs = Variable(
-            img_tensor.cuda(device=opts.gpu_id), requires_grad=False)
-        self.masks = Variable(
-            mask_tensor.cuda(device=opts.gpu_id), requires_grad=False)
-        self.kps = Variable(
-            kp_tensor.cuda(device=opts.gpu_id), requires_grad=False)
-        self.cams = Variable(
-            cam_tensor.cuda(device=opts.gpu_id), requires_grad=False)
+        self.input_imgs = input_img_tensor.cuda(device=opts.gpu_id)
+        self.imgs = img_tensor.cuda(device=opts.gpu_id)
+        self.masks = mask_tensor.cuda(device=opts.gpu_id)
+        self.kps = kp_tensor.cuda(device=opts.gpu_id)
+        self.cams = cam_tensor.cuda(device=opts.gpu_id)
 
         # Compute barrier distance transform.
         mask_dts = np.stack([image_utils.compute_dt_barrier(m) for m in batch['mask']])
         dt_tensor = torch.FloatTensor(mask_dts).cuda(device=opts.gpu_id)
+
         # B x 1 x N x N
-        self.dts_barrier = Variable(dt_tensor, requires_grad=False).unsqueeze(1)
+        self.dts_barrier = dt_tensor.unsqueeze(1)
+
 
     def forward(self):
         opts = self.opts
@@ -208,6 +210,7 @@ class ShapeTrainer(train_utils.Trainer):
         self.triangle_loss = self.triangle_loss_fn(self.pred_v)
 
         # Finally sum up the loss.
+
         # Instance loss:
         self.total_loss = opts.kp_loss_wt * self.kp_loss
         self.total_loss += opts.mask_loss_wt * self.mask_loss
@@ -286,17 +289,17 @@ class ShapeTrainer(train_utils.Trainer):
     def get_current_scalars(self):
         sc_dict = OrderedDict([
             ('smoothed_total_loss', self.smoothed_total_loss),
-            ('total_loss', self.total_loss.data[0]),
-            ('kp_loss', self.kp_loss.data[0]),
-            ('mask_loss', self.mask_loss.data[0]),
-            ('vert2kp_loss', self.vert2kp_loss.data[0]),
-            ('deform_reg', self.deform_reg.data[0]),
-            ('tri_loss', self.triangle_loss.data[0]),
-            ('cam_loss', self.cam_loss.data[0]),
+            ('total_loss', self.total_loss.item()),
+            ('kp_loss', self.kp_loss.item()),
+            ('mask_loss', self.mask_loss.item()),
+            ('vert2kp_loss', self.vert2kp_loss.item()),
+            ('deform_reg', self.deform_reg.item()),
+            ('tri_loss', self.triangle_loss.item()),
+            ('cam_loss', self.cam_loss.item()),
         ])
         if self.opts.texture:
-            sc_dict['tex_loss'] = self.tex_loss.data[0]
-            sc_dict['tex_dt_loss'] = self.tex_dt_loss.data[0]
+            sc_dict['tex_loss'] = self.tex_loss.item()
+            sc_dict['tex_dt_loss'] = self.tex_dt_loss.item()
 
         return sc_dict
 

@@ -34,6 +34,7 @@ class Laplacian(torch.autograd.Function):
     def __init__(self, faces):
         # Faces is B x F x 3, cuda torch Variabe.
         # Reuse faces.
+        import ipdb;ipdb.set_trace()
         self.F_np = faces.data.cpu().numpy()
         self.F = faces.data
         self.L = None

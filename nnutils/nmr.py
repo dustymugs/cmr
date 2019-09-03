@@ -11,7 +11,7 @@ import torch
 
 import neural_renderer
 
-from ..nnutils import geom_utils
+from . import geom_utils
 
 #############
 ### Utils ###
@@ -29,8 +29,7 @@ def convert_as(src, trg):
 class NMR(object):
     def __init__(self):
         # setup renderer
-        renderer = neural_renderer.Renderer()
-        self.renderer = renderer
+        self.renderer = renderer = neural_renderer.Renderer()
 
     def to_gpu(self, device=0):
         # self.renderer.to_gpu(device)
@@ -103,36 +102,76 @@ class Render(torch.autograd.Function):
         super(Render, self).__init__()
         self.renderer = renderer
 
-    def forward(self, vertices, faces, textures=None):
+    #def forward(self, vertices, faces, textures=None):
+    #    # B x N x 3
+    #    # Flipping the y-axis here to make it align with the image coordinate system!
+    #    vs = vertices.cpu().numpy()
+    #    vs[:, :, 1] *= -1
+    #    fs = faces.cpu().numpy()
+    #    if textures is None:
+    #        self.mask_only = True
+    #        masks = self.renderer.forward_mask(vs, fs)
+    #        return convert_as(torch.Tensor(masks), vertices)
+    #    else:
+    #        self.mask_only = False
+    #        ts = textures.cpu().numpy()
+    #        imgs = self.renderer.forward_img(vs, fs, ts)
+    #        return convert_as(torch.Tensor(imgs), vertices)
+
+    @staticmethod
+    def forward(ctx, renderer, vertices, faces, textures=None):
+
         # B x N x 3
         # Flipping the y-axis here to make it align with the image coordinate system!
         vs = vertices.cpu().numpy()
         vs[:, :, 1] *= -1
         fs = faces.cpu().numpy()
         if textures is None:
-            self.mask_only = True
-            masks = self.renderer.forward_mask(vs, fs)
-            return convert_as(torch.Tensor(masks), vertices)
-        else:
-            self.mask_only = False
-            ts = textures.cpu().numpy()
-            imgs = self.renderer.forward_img(vs, fs, ts)
-            return convert_as(torch.Tensor(imgs), vertices)
 
-    def backward(self, grad_out):
+            mask_only = True
+            masks = renderer.forward_mask(vs, fs)
+            rtn = convert_as(torch.Tensor(masks), vertices)
+
+        else:
+
+            mask_only = False
+            ts = textures.cpu().numpy()
+            imgs = renderer.forward_img(vs, fs, ts)
+            rtn = convert_as(torch.Tensor(imgs), vertices)
+
+        ctx.renderer = renderer
+        ctx.mask_only = mask_only
+
+        return rtn
+
+    #def backward(self, grad_out):
+    #    g_o = grad_out.cpu().numpy()
+    #    if self.mask_only:
+    #        grad_verts = self.renderer.backward_mask(g_o)
+    #        grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
+    #        grad_tex = None
+    #    else:
+    #        grad_verts, grad_tex = self.renderer.backward_img(g_o)
+    #        grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
+    #        grad_tex = convert_as(torch.Tensor(grad_tex), grad_out)
+
+    #    grad_verts[:, :, 1] *= -1
+    #    return grad_verts, None, grad_tex
+
+    @staticmethod
+    def backward(ctx, grad_out):
         g_o = grad_out.cpu().numpy()
-        if self.mask_only:
-            grad_verts = self.renderer.backward_mask(g_o)
+        if ctx.mask_only:
+            grad_verts = ctx.renderer.backward_mask(g_o)
             grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
             grad_tex = None
         else:
-            grad_verts, grad_tex = self.renderer.backward_img(g_o)
+            grad_verts, grad_tex = ctx.renderer.backward_img(g_o)
             grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
             grad_tex = convert_as(torch.Tensor(grad_tex), grad_out)
 
         grad_verts[:, :, 1] *= -1
         return grad_verts, None, grad_tex
-
 
 ########################################################################
 ############## Wrapper torch module for Neural Renderer ################
@@ -178,9 +217,9 @@ class NeuralRenderer(torch.nn.Module):
         verts = self.proj_fn(vertices, cams, offset_z=self.offset_z)
 
         if textures is not None:
-            return Render(self.renderer)(verts, faces, textures)
+            return Render.apply(self.renderer, verts, faces, textures)
         else:
-            return Render(self.renderer)(verts, faces)
+            return Render.apply(self.renderer, verts, faces)
 
 
 ########################################################################

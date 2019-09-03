@@ -36,7 +36,7 @@ flags.DEFINE_string('cub_dir', kData, 'CUB Data Directory')
 
 curr_path = osp.dirname(osp.abspath(__file__))
 cache_path = osp.join(curr_path, '..', 'cachedir')
-flags.DEFINE_string('cub_cache_dir', osp.join(cache_path, 'cub'), 'CUB Data Directory')
+flags.DEFINE_string('cub_cache_dir', osp.join(cache_path, 'cub'), 'CUB Cache Directory')
 
 opts = flags.FLAGS
 

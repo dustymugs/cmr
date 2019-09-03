@@ -28,6 +28,9 @@ flags.DEFINE_integer('img_size', 256, 'image size the network was trained on.')
 
 opts = flags.FLAGS
 
+#import warnings
+#warnings.filterwarnings('error')
+
 
 def preprocess_image(img_path, img_size=256):
     img = io.imread(img_path) / 255.
@@ -94,10 +97,7 @@ def visualize(img, outputs, renderer):
     plt.imshow(vp3)
     plt.axis('off')
     plt.draw()
-    plt.show()
-    import ipdb
-    ipdb.set_trace()
-
+    plt.show(block=True)
 
 def main(_):
 
@@ -112,7 +112,6 @@ def main(_):
     renderer = predictor.vis_rend
     renderer.set_light_dir([0, 1, -1], 0.4)
 
-    #import ipdb;ipdb.set_trace()
     visualize(img, outputs, predictor.vis_rend)
 
 
