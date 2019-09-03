@@ -84,8 +84,8 @@ class ShapeTrainer(train_utils.Trainer):
         self.faces = faces.repeat(opts.batch_size, 1, 1)
 
         # TODO: autograd.Function
-        self.renderer = NeuralRenderer(opts.img_size)
-        self.renderer_predcam = NeuralRenderer(opts.img_size) #for camera loss via projection
+        self.renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
+        self.renderer_predcam = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id) #for camera loss via projection
 
         # Need separate NMR for each fwd/bwd call.
         if opts.texture:

@@ -42,10 +42,10 @@ class MeshPredictor(object):
         self.model.eval()
         self.model = self.model.cuda(device=self.opts.gpu_id)
 
-        self.renderer = NeuralRenderer(opts.img_size)
+        self.renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
 
         if opts.texture:
-            self.tex_renderer = NeuralRenderer(opts.img_size)
+            self.tex_renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
             # Only use ambient light for tex renderer
             self.tex_renderer.ambient_light_only()
 
