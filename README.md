@@ -74,6 +74,7 @@ Note that due to the module-drive approach, you will need to run the `python` co
 ```
 cd /
 python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/img1.jpg
+python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/img2.jpg
 python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/birdie.jpg
 ```
 
