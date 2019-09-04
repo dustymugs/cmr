@@ -13,7 +13,6 @@ import numpy as np
 import torch
 import torchvision
 import torch.nn as nn
-from torch.autograd import Variable
 
 from ..utils import mesh
 from ..utils import geometry as geom_utils
@@ -251,7 +250,7 @@ class MeshNet(nn.Module):
             self.mean_v = nn.Parameter(torch.Tensor(verts[:num_sym_output]))
 
             # Needed for symmetrizing..
-            self.flip = Variable(torch.ones(1, 3).cuda(), requires_grad=False)
+            self.flip = torch.ones(1, 3).cuda()
             self.flip[0, 0] = -1
         else:
             if sfm_mean_shape is not None:
@@ -261,12 +260,12 @@ class MeshNet(nn.Module):
 
         verts_np = verts
         faces_np = faces
-        self.faces = Variable(torch.LongTensor(faces).cuda(), requires_grad=False)
+        self.faces = torch.LongTensor(faces).cuda()
         self.edges2verts = mesh.compute_edges2verts(verts, faces)
 
         vert2kp_init = torch.Tensor(np.ones((num_kps, num_verts)) / float(num_verts))
         # Remember initial vert2kp (after softmax)
-        self.vert2kp_init = torch.nn.functional.softmax(Variable(vert2kp_init.cuda(), requires_grad=False), dim=1)
+        self.vert2kp_init = torch.nn.functional.softmax(vert2kp_init.cuda(), dim=1)
         self.vert2kp = nn.Parameter(vert2kp_init)
 
 
@@ -281,7 +280,7 @@ class MeshNet(nn.Module):
 
             uv_sampler = mesh.compute_uvsampler(verts_np, faces_np[:num_faces], tex_size=opts.tex_size)
             # F' x T x T x 2
-            uv_sampler = Variable(torch.FloatTensor(uv_sampler).cuda(), requires_grad=False)
+            uv_sampler = torch.FloatTensor(uv_sampler).cuda()
             # B x F' x T x T x 2
             uv_sampler = uv_sampler.unsqueeze(0).repeat(self.opts.batch_size, 1, 1, 1, 1)
             img_H = int(2**np.floor(np.log2(np.sqrt(num_faces) * opts.tex_size)))

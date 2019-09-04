@@ -131,7 +131,7 @@ class Render(torch.autograd.Function):
         del ctx.mask_only
 
         grad_verts[:, :, 1] *= -1
-        return grad_verts, None, grad_tex
+        return None, grad_verts, None, grad_tex
 
 
 ########################################################################

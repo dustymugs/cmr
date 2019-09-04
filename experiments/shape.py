@@ -116,7 +116,6 @@ class ShapeTrainer(train_utils.Trainer):
         self.deform_reg_fn = loss_utils.deform_l2reg
         self.camera_loss = loss_utils.camera_loss
 
-        # TODO: autograd.Function
         self.triangle_loss_fn = loss_utils.LaplacianLoss(self.faces)
 
         if self.opts.texture:

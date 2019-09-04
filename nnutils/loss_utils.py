@@ -322,9 +322,8 @@ class LaplacianLoss(object):
         self.Lx = None
 
     def __call__(self, verts):
-        import ipdb;ipdb.set_trace()
 
-        if not self.L:
+        if self.L is None:
             self.L, self.F_np = Laplacian.compute_laplacian(self.faces, verts)
 
         self.Lx = Laplacian.apply(self.faces, self.L, verts)

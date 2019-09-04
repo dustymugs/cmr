@@ -33,10 +33,14 @@ def convert_as(src, trg):
 class Laplacian(torch.autograd.Function):
 
     @staticmethod
-    def compute_laplacian(faces, V):
+    def compute_laplacian(faces, vertices):
 
         F_np = faces.data.cpu().numpy()
         F = faces.data
+
+        V = vertices.data
+        V_np = V.cpu().numpy()
+        batchV = V_np.reshape(-1, 3)
 
         print('Computing the Laplacian!')
         # Compute cotangents
@@ -104,7 +108,7 @@ class Laplacian(torch.autograd.Function):
 
         del ctx.L
 
-        return convert_as(torch.Tensor(Lg), grad_out)
+        return None, None, convert_as(torch.Tensor(Lg), grad_out)
 
 
 def cotangent(V, F):
