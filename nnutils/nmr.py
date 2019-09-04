@@ -202,8 +202,8 @@ def exec_main():
 
     # Torch API
     mask_renderer = NeuralRenderer()
-    vertices_var = torch.autograd.Variable(torch.from_numpy(vertices[None, :, :]).cuda(device=0), requires_grad=True)
-    faces_var = torch.autograd.Variable(torch.from_numpy(faces[None, :, :]).cuda(device=0))
+    vertices_var = torch.from_numpy(vertices[None, :, :]).cuda(device=0).requires_grad_()
+    faces_var = torch.from_numpy(faces[None, :, :]).cuda(device=0)
     
     for ix in range(100):
         masks_torch = mask_renderer.forward(vertices_var, faces_var)
@@ -222,12 +222,12 @@ def teapot_deform_test():
     vertices, faces = neural_renderer.load_obj(obj_file)
 
     image_ref = scipy.misc.imread(img_file).astype('float32').mean(-1) / 255.
-    image_ref = torch.autograd.Variable(torch.Tensor(image_ref[None, :, :]).cuda(device=0))
+    image_ref = torch.Tensor(image_ref[None, :, :]).cuda(device=0)
 
     mask_renderer = NeuralRenderer()
-    faces_var = torch.autograd.Variable(torch.from_numpy(faces[None, :, :]).cuda(device=0))
+    faces_var = torch.from_numpy(faces[None, :, :]).cuda(device=0)
     cams = np.array([1., 0, 0, 1, 0, 0, 0], dtype=np.float32)
-    cams_var = torch.autograd.Variable(torch.from_numpy(cams[None, :]).cuda(device=0))
+    cams_var = torch.from_numpy(cams[None, :]).cuda(device=0)
 
     class TeapotModel(torch.nn.Module):
         def __init__(self):

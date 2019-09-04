@@ -14,7 +14,6 @@ import numpy as np
 import scipy.misc
 import torch
 import torchvision
-from torch.autograd import Variable
 import scipy.io as sio
 
 from ..nnutils import mesh_net
@@ -53,14 +52,12 @@ class MeshPredictor(object):
             anno_sfm_path = osp.join(opts.cub_cache_dir, 'sfm', 'anno_testval.mat')
             anno_sfm = sio.loadmat(
                 anno_sfm_path, struct_as_record=False, squeeze_me=True)
-            sfm_mean_shape = torch.Tensor(np.transpose(anno_sfm['S'])).cuda(
+            self.sfm_mean_shape = torch.Tensor(np.transpose(anno_sfm['S'])).cuda(
                 device=opts.gpu_id)
-            self.sfm_mean_shape = Variable(sfm_mean_shape, requires_grad=False)
             self.sfm_mean_shape = self.sfm_mean_shape.unsqueeze(0).repeat(
                 opts.batch_size, 1, 1)
-            sfm_face = torch.LongTensor(anno_sfm['conv_tri'] - 1).cuda(
+            self.sfm_face = torch.LongTensor(anno_sfm['conv_tri'] - 1).cuda(
                 device=opts.gpu_id)
-            self.sfm_face = Variable(sfm_face, requires_grad=False)
             faces = self.sfm_face.view(1, -1, 3)
         else:
             # For visualization
@@ -93,14 +90,11 @@ class MeshPredictor(object):
         for b in range(input_img_tensor.size(0)):
             input_img_tensor[b] = self.resnet_transform(input_img_tensor[b])
 
-        self.input_imgs = Variable(
-            input_img_tensor.cuda(device=opts.gpu_id), requires_grad=False)
-        self.imgs = Variable(
-            img_tensor.cuda(device=opts.gpu_id), requires_grad=False)
+        self.input_imgs = input_img_tensor.cuda(device=opts.gpu_id)
+        self.imgs = img_tensor.cuda(device=opts.gpu_id)
         if opts.use_sfm_camera:
             cam_tensor = batch['sfm_pose'].type(torch.FloatTensor)
-            self.sfm_cams = Variable(
-                cam_tensor.cuda(device=opts.gpu_id), requires_grad=False)
+            self.sfm_cams = cam_tensor.cuda(device=opts.gpu_id)
 
     def predict(self, batch):
         """

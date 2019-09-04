@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 
 import torch
-from torch.autograd import Variable
 import numpy as np
 import cv2
 
@@ -23,8 +22,7 @@ class VisRenderer(object):
 
     def __init__(self, img_size, faces, t_size=3):
         self.renderer = NeuralRenderer(img_size)
-        self.faces = Variable(
-            torch.IntTensor(faces).cuda(), requires_grad=False)
+        self.faces = torch.IntTensor(faces).cuda()
         if self.faces.dim() == 2:
             self.faces = torch.unsqueeze(self.faces, 0)
         default_tex = np.ones((1, self.faces.shape[1], t_size, t_size, t_size,
@@ -32,8 +30,7 @@ class VisRenderer(object):
         blue = np.array([156, 199, 234.]) / 255.
         default_tex = default_tex * blue
         # Could make each triangle different color
-        self.default_tex = Variable(
-            torch.FloatTensor(default_tex).cuda(), requires_grad=False)
+        self.default_tex = torch.FloatTensor(default_tex).cuda()
         # rot = transformations.quaternion_about_axis(np.pi/8, [1, 0, 0])
         # This is median quaternion from sfm_pose
         # rot = np.array([ 0.66553962,  0.31033762, -0.02249813,  0.01267084])
@@ -46,14 +43,13 @@ class VisRenderer(object):
                                                                    1])))
         rot = transformations.quaternion_from_matrix(R, isprecise=True)
         cam = np.hstack([0.75, 0, 0, rot])
-        self.default_cam = Variable(
-            torch.FloatTensor(cam).cuda(), requires_grad=False)
+        self.default_cam = torch.FloatTensor(cam).cuda()
         self.default_cam = torch.unsqueeze(self.default_cam, 0)
 
     def __call__(self, verts, cams=None, texture=None, rend_mask=False):
         """
-        verts is |V| x 3 cuda torch Variable
-        cams is 7, cuda torch Variable
+        verts is |V| x 3 cuda torch Tensor
+        cams is 7, cuda torch Tensor
         Returns N x N x 3 numpy
         """
         if texture is None:
@@ -70,9 +66,9 @@ class VisRenderer(object):
         if verts.dim() == 2:
             verts = torch.unsqueeze(verts, 0)
 
-        verts = asVariable(verts)
-        cams = asVariable(cams)
-        texture = asVariable(texture)
+        #verts = asVariable(verts)
+        #cams = asVariable(cams)
+        #texture = asVariable(texture)
 
         if rend_mask:
             rend = self.renderer.forward(verts, self.faces, cams)
@@ -88,7 +84,7 @@ class VisRenderer(object):
 
     def rotated(self, vert, deg, axis=[0, 1, 0], cam=None, texture=None):
         """
-        vert is N x 3, torch FloatTensor (or Variable)
+        vert is N x 3, torch FloatTensor
         """
         import cv2
         new_rot = cv2.Rodrigues(np.deg2rad(deg) * np.array(axis))[0]
@@ -116,7 +112,7 @@ class VisRenderer(object):
             new_ext = [0.6, 0, 0]
         # Cam is 7D: [s, tx, ty, rot]
         import cv2
-        cam = asVariable(cam)
+        #cam = asVariable(cam)
         quat = cam[-4:].view(1, 1, -1)
         R = transformations.quaternion_matrix(
             quat.squeeze().data.cpu().numpy())[:3, :3]
@@ -135,9 +131,9 @@ class VisRenderer(object):
              np.array([0, 0, 0, 1])])
         new_quat = transformations.quaternion_from_matrix(
             new_R, isprecise=True)
-        new_quat = Variable(torch.Tensor(new_quat).cuda(), requires_grad=False)
+        new_quat = torch.Tensor(new_quat).cuda()
         # new_cam = torch.cat([cam[:-4], new_quat], 0)
-        new_ext = Variable(torch.Tensor(new_ext).cuda(), requires_grad=False)
+        new_ext = torch.Tensor(new_ext).cuda()
         new_cam = torch.cat([new_ext, new_quat], 0)
 
         rend_img = self.__call__(verts, cams=new_cam, texture=texture)
@@ -159,10 +155,10 @@ class VisRenderer(object):
         renderer.light_intensity_ambient = int_amb
 
 
-def asVariable(x):
-    if type(x) is not torch.autograd.Variable:
-        x = Variable(x, requires_grad=False)
-    return x
+#def asVariable(x):
+#    if type(x) is not torch.autograd.Variable:
+#        x = Variable(x, requires_grad=False)
+#    return x
 
 
 def convert_as(src, trg):
@@ -170,7 +166,7 @@ def convert_as(src, trg):
     if src.is_cuda:
         src = src.cuda(device=trg.get_device())
     if type(trg) is torch.autograd.Variable:
-        src = Variable(src, requires_grad=False)
+        src = torch.autograd.Variable(src, requires_grad=False)
     return src
 
 

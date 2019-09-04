@@ -112,7 +112,7 @@ def camera_loss(cam_pred, cam_gt, margin):
 
 def hinge_loss(loss, margin):
     # Only penalize if loss > margin
-    zeros = torch.autograd.Variable(torch.zeros(1).cuda(), requires_grad=False)
+    zeros = torch.zeros(1).cuda()
     return torch.max(loss - margin, zeros)
 
 
@@ -249,7 +249,7 @@ class EdgeLoss(object):
         # B x E x 2
         edge_verts = edges2verts[:, :, :2]
         self.indices = torch.stack([edge_verts, edge_verts, edge_verts], dim=2)
-        V_copy = torch.autograd.Variable(verts.data, requires_grad=False)
+        V_copy = verts.clone().detach().data
         if V_copy.dim() == 2:
             # N x 3 (mean shape) -> B x N x 3
             V_copy = V_copy.unsqueeze(0).repeat(edges2verts.size(0), 1, 1)
@@ -262,7 +262,7 @@ class EdgeLoss(object):
             self.log_e0 = torch.log(e0)
 
         self.margin = np.log(margin)
-        self.zeros = torch.autograd.Variable(torch.zeros(1).cuda(), requires_grad=False)
+        self.zeros = torch.zeros(1).cuda()
 
         # For visualization
         self.v1 = edges2verts[0, :, 0].data.cpu().numpy()
