@@ -6,7 +6,7 @@ This repo is a fork of the [main project repo](https://github.com/akanazawa/cmr)
 - [X] Octave support as alternative to MatLab for preprocessing scripts
 - [X] Add and enhance documentation with regards to training and data files
 - [ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
-- [ ] Updated PyTorch support (1.2+)
+- [X] Updated PyTorch support (1.2+)
 - [ ] Updated Python dependencies
 - [ ] Python3 support
 - [ ] Replace MatLab code with pure Python implementation
