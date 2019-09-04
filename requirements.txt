@@ -19,3 +19,4 @@ torchfile
 tqdm==4.19.5
 visdom==0.1.7
 #neural-renderer-pytorch
+git+https://github.com/dustymugs/PerceptualSimilarity.git

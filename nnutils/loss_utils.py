@@ -357,8 +357,8 @@ class LaplacianLoss(object):
 
 class PerceptualTextureLoss(object):
     def __init__(self):
-        from .perceptual_loss import PerceptualLoss
-        self.perceptual_loss = PerceptualLoss()
+        from PerceptualSimilarity.models import PerceptualLoss
+        self.perceptual_loss = PerceptualLoss(model='net', net='alex')
 
     def __call__(self, img_pred, img_gt, mask_pred, mask_gt):
         """
