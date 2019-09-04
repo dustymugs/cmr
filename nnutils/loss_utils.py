@@ -7,8 +7,10 @@ from __future__ import division
 from __future__ import print_function
 
 import torch
-from . import geom_utils
 import numpy as np
+
+from . import geom_utils
+from .laplacian import Laplacian
 
 def mask_dt_loss(proj_verts, dist_transf):
     """
@@ -313,17 +315,24 @@ class LaplacianLoss(object):
     def __init__(self, faces):
         # Input:
         #  faces: B x F x 3
-        from .laplacian import Laplacian
         # V x V
-        self.laplacian = Laplacian(faces)
+        self.faces = faces
+        self.L = None
+        self.F_np = None
         self.Lx = None
 
     def __call__(self, verts):
         import ipdb;ipdb.set_trace()
-        self.Lx = self.laplacian(verts)
+
+        if not self.L:
+            self.L, self.F_np = Laplacian.compute_laplacian(self.faces, verts)
+
+        self.Lx = Laplacian.apply(self.faces, self.L, verts)
+
         # Reshape to BV x 3
         Lx = self.Lx.view(-1, self.Lx.size(2))
         loss = torch.norm(Lx, p=2, dim=1).mean()
+
         return loss
 
     def visualize(self, verts, mv=None):
@@ -334,7 +343,7 @@ class LaplacianLoss(object):
         V = verts[0].data.cpu().numpy()
 
         from psbody.mesh import Mesh
-        F = self.laplacian.F_np[0]
+        F = self.F_np[0]
         mesh = Mesh(V, F)
 
         weights = np.linalg.norm(Lx, axis=1)
