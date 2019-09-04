@@ -127,6 +127,9 @@ class Render(torch.autograd.Function):
             grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
             grad_tex = convert_as(torch.Tensor(grad_tex), grad_out)
 
+        del ctx.renderer
+        del ctx.mask_only
+
         grad_verts[:, :, 1] *= -1
         return grad_verts, None, grad_tex
 
