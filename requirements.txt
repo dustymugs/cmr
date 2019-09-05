@@ -1,5 +1,5 @@
 absl-py==0.1.10
-#chainer==3.3.0
+chainer==3.3.0
 cupy==2.3.0
 Cython==0.27.3
 h5py==2.7.1
