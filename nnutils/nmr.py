@@ -9,7 +9,7 @@ import tqdm
 import chainer
 import torch
 
-import neural_renderer
+import neural_renderer as nr
 
 from ..nnutils import geom_utils
 
@@ -23,71 +23,116 @@ def convert_as(src, trg):
     return src
 
 ########################################################################
-############ Wrapper class for the chainer Neural Renderer #############
+############ Wrapper class for the pytorch Neural Renderer #############
 ##### All functions must only use numpy arrays as inputs/outputs #######
 ########################################################################
 class NMR(object):
     def __init__(self, cuda_device=None):
         # setup renderer
-        self.renderer = renderer = neural_renderer.Renderer()
+        self.renderer = renderer = nr.Renderer(
+            camera_mode='look_at'
+        )
         self.cuda_device = cuda_device
 
-    def forward_mask(self, vertices, faces):
-        ''' Renders masks.
-        Args:
-            vertices: B X N X 3 numpy array
-            faces: B X F X 3 numpy array
-        Returns:
-            masks: B X 256 X 256 numpy array
-        '''
-        self.faces = chainer.Variable(chainer.cuda.to_gpu(faces, self.cuda_device))
-        self.vertices = chainer.Variable(chainer.cuda.to_gpu(vertices, self.cuda_device))
+    def set_cuda(self, tensor):
 
+        if self.cuda_device is not None:
+            tensor = tensor.cuda(device=self.cuda_device)
+        else:
+            tensor = tensor.cpu()
+
+        return tensor
+
+    def make_tensor(self, numpy_array, dtype=None, requires_grad=False):
+
+        dtype = (
+            dtype
+            if dtype is not None
+            else getattr(torch, numpy_array.dtype.name)
+        )
+
+        tensor = self.set_cuda(
+            torch.from_numpy(numpy_array).type(dtype)
+        )
+
+        if requires_grad:
+            tensor = tensor.requires_grad_()
+
+        return tensor
+
+    def forward_mask(self, vertices, faces):
+        # Renders masks.
+        # Args:
+        #     vertices: B X N X 3 numpy array
+        #     faces: B X F X 3 numpy array
+        # Returns:
+        #     masks: B X 256 X 256 numpy array
+
+        self.faces = self.make_tensor(faces, torch.IntTensor)
+        self.vertices = self.make_tensor(vertices, requires_grad=True)
+        #self.faces = chainer.Variable(chainer.cuda.to_gpu(faces, self.cuda_device))
+        #self.vertices = chainer.Variable(chainer.cuda.to_gpu(vertices, self.cuda_device))
+
+        import ipdb;ipdb.set_trace()
         self.masks = self.renderer.render_silhouettes(self.vertices, self.faces)
 
+        return self.masks.cpu().numpy() # (16, 256, 256)
+
         masks = self.masks.data.get()
-        return masks
-    
+        return masks # numpy array (16, 256, 256)
+
     def backward_mask(self, grad_masks):
-        ''' Compute gradient of vertices given mask gradients.
-        Args:
-            grad_masks: B X 256 X 256 numpy array
-        Returns:
-            grad_vertices: B X N X 3 numpy array
-        '''
-        self.masks.grad = chainer.cuda.to_gpu(grad_masks, self.cuda_device)
-        self.masks.backward()
-        return self.vertices.grad.get()
+        # Compute gradient of vertices given mask gradients.
+        # Args:
+        #     grad_masks: B X 256 X 256 numpy array
+        # Returns:
+        #     grad_vertices: B X N X 3 numpy array
+
+        import ipdb;ipdb.set_trace()
+        self.masks.backward(gradient=self.make_tensor(grad_masks))
+
+        return self.vertices.grad.numpy()
+
+        return self.vertices.grad.get() # numpy array (16, 642, 3)
 
     def forward_img(self, vertices, faces, textures):
-        ''' Renders masks.
-        Args:
-            vertices: B X N X 3 numpy array
-            faces: B X F X 3 numpy array
-            textures: B X F X T X T X T X 3 numpy array
-        Returns:
-            images: B X 3 x 256 X 256 numpy array
-        '''
-        self.faces = chainer.Variable(chainer.cuda.to_gpu(faces, self.cuda_device))
-        self.vertices = chainer.Variable(chainer.cuda.to_gpu(vertices, self.cuda_device))
-        self.textures = chainer.Variable(chainer.cuda.to_gpu(textures, self.cuda_device))
-        self.images = self.renderer.render(self.vertices, self.faces, self.textures)
+        # Renders masks.
+        # Args:
+        #     vertices: B X N X 3 numpy array
+        #     faces: B X F X 3 numpy array
+        #     textures: B X F X T X T X T X 3 numpy array
+        # Returns:
+        #     images: B X 3 x 256 X 256 numpy array
+
+        self.faces = self.make_tensor(faces, torch.IntTensor)
+        self.vertices = self.make_tensor(vertices, requires_grad=True)
+        self.textures = self.make_tensor(textures, requires_grad=True)
+        #self.faces = chainer.Variable(chainer.cuda.to_gpu(faces, self.cuda_device))
+        #self.vertices = chainer.Variable(chainer.cuda.to_gpu(vertices, self.cuda_device))
+        #self.textures = chainer.Variable(chainer.cuda.to_gpu(textures, self.cuda_device))
+
+        self.images = self.renderer.render_rgb(self.vertices, self.faces, self.textures)
+
+        import ipdb;ipdb.set_trace()
+        return self.images.cpu().numpy() # numpy array (16, 3, 256, 256)
 
         images = self.images.data.get()
-        return images
-
+        return images # numpy array (16, 3, 256, 256)
 
     def backward_img(self, grad_images):
-        ''' Compute gradient of vertices given image gradients.
-        Args:
-            grad_images: B X 3? X 256 X 256 numpy array
-        Returns:
-            grad_vertices: B X N X 3 numpy array
-            grad_textures: B X F X T X T X T X 3 numpy array
-        '''
-        self.images.grad = chainer.cuda.to_gpu(grad_images, self.cuda_device)
-        self.images.backward()
-        return self.vertices.grad.get(), self.textures.grad.get()
+        # Compute gradient of vertices given image gradients.
+        # Args:
+        #     grad_images: B X 3? X 256 X 256 numpy array
+        # Returns:
+        #     grad_vertices: B X N X 3 numpy array
+        #     grad_textures: B X F X T X T X T X 3 numpy array
+
+        import ipdb;ipdb.set_trace()
+        self.images.backward(gradient=self.make_tensor(grad_images))
+
+        return self.vertices.grad.numpy(), self.textures.grad.numpy()
+
+        return self.vertices.grad.get(), self.textures.grad.get() # numpy array (16, 642, 3), numpy array (16, 1280, 6, 6, 6, 3)
 
 ########################################################################
 ################# Wrapper class a rendering PythonOp ###################
@@ -98,41 +143,69 @@ class Render(torch.autograd.Function):
     @staticmethod
     def forward(ctx, renderer, vertices, faces, textures=None):
 
+        import ipdb;ipdb.set_trace()
+
         ctx.renderer = renderer
 
         # B x N x 3
         # Flipping the y-axis here to make it align with the image coordinate system!
-        vs = vertices.cpu().numpy()
-        vs[:, :, 1] *= -1
-        fs = faces.cpu().numpy()
+        #vs = vertices.cpu().numpy()
+        #vs[:, :, 1] *= -1
+        #fs = faces.cpu().numpy()
+
+        vertices[:, :, 1] *= -1
+        ctx.mark_dirty(vertices)
+        ctx.vertices = vertices
+
         if textures is None:
-            ctx.mask_only = True
-            masks = ctx.renderer.forward_mask(vs, fs)
-            return convert_as(torch.Tensor(masks), vertices)
+
+            ctx.masks = renderer.render_silhouettes(vertices, faces)
+            return ctx.masks
+
         else:
-            ctx.mask_only = False
-            ts = textures.cpu().numpy()
-            imgs = ctx.renderer.forward_img(vs, fs, ts)
-            return convert_as(torch.Tensor(imgs), vertices)
+
+            ctx.textures = textures
+            ctx.mark_dirty(textures)
+
+            ctx.images = renderer.render_rgb(vertices, faces, textures)
+            return ctx.images
 
     @staticmethod
     def backward(ctx, grad_out):
-        g_o = grad_out.cpu().numpy()
-        if ctx.mask_only:
-            grad_verts = ctx.renderer.backward_mask(g_o)
-            grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
-            grad_tex = None
-        else:
-            grad_verts, grad_tex = ctx.renderer.backward_img(g_o)
-            grad_verts = convert_as(torch.Tensor(grad_verts), grad_out)
-            grad_tex = convert_as(torch.Tensor(grad_tex), grad_out)
+        import ipdb;ipdb.set_trace()
 
-        del ctx.renderer
-        del ctx.mask_only
+        renderer = ctx.renderer
+        vertices = ctx.vertices
+
+        if hasattr(ctx, 'masks'):
+
+            masks = ctx.masks
+
+            masks.backward(gradient=grad_out)
+
+            grad_verts = vertices.grad
+            grad_tex = None
+
+            del masks, ctx.masks
+
+        else:
+
+            textures = ctx.textures
+            images = ctx.images
+
+            images.backward(gradient=grad_out)
+
+            grad_verts = vertices.grad
+            grad_tex = textures.grad
+
+            del textures, ctx.textures
+            del images, ctx.images
+
+        del renderer, ctx.renderer
+        del vertices, ctx.vertices
 
         grad_verts[:, :, 1] *= -1
         return None, grad_verts, None, grad_tex
-
 
 ########################################################################
 ############## Wrapper torch module for Neural Renderer ################
@@ -145,40 +218,59 @@ class NeuralRenderer(torch.nn.Module):
     """
     def __init__(self, img_size=256, cuda_device=None):
         super(NeuralRenderer, self).__init__()
-        self.renderer = NMR(cuda_device=cuda_device)
+        self.renderer = nr.Renderer(
+            camera_mode='look_at'
+        )
+        self.cuda_device = cuda_device
 
         # Adjust the core renderer
-        self.renderer.renderer.image_size = img_size
-        self.renderer.renderer.perspective = False
+        self.renderer.image_size = img_size
+        self.renderer.perspective = False
 
         # Set a default camera to be at (0, 0, -2.732)
-        self.renderer.renderer.eye = [0, 0, -2.732]
+        self.renderer.eye = [0, 0, -2.732]
 
         # Make it a bit brighter for vis
-        self.renderer.renderer.light_intensity_ambient = 0.8
+        self.renderer.light_intensity_ambient = 0.8
 
         self.proj_fn = geom_utils.orthographic_proj_withz
         self.offset_z = 5.
 
     def ambient_light_only(self):
         # Make light only ambient.
-        self.renderer.renderer.light_intensity_ambient = 1
-        self.renderer.renderer.light_intensity_directional = 0
+        self.renderer.light_intensity_ambient = 1
+        self.renderer.light_intensity_directional = 0
 
     def set_bgcolor(self, color):
-        self.renderer.renderer.background_color = color
+        self.renderer.background_color = color
 
     def project_points(self, verts, cams):
         proj = self.proj_fn(verts, cams)
         return proj[:, :, :2]
 
+    def _new_tensor(self, tensor, requires_grad=True):
+        # intentionally detach from current graph
+
+        new_tensor = tensor.clone().detach().requires_grad_()
+
+        if self.cuda_device is not None:
+            new_tensor = new_tensor.cuda(device=self.cuda_device)
+        else:
+            new_tensor = new_tensor.cpu()
+
+        return new_tensor
+
     def forward(self, vertices, faces, cams, textures=None):
         verts = self.proj_fn(vertices, cams, offset_z=self.offset_z)
 
+        v = self._new_tensor(verts)
+        f = faces.to(device=v.device, dtype=torch.int32)
+
         if textures is not None:
-            return Render.apply(self.renderer, verts, faces, textures)
+            t = self._new_tensor(textures)
+            return Render.apply(self.renderer, v, f, t)
         else:
-            return Render.apply(self.renderer, verts, faces)
+            return Render.apply(self.renderer, v, f)
 
 
 ########################################################################
@@ -188,8 +280,7 @@ def exec_main():
     obj_file = 'birds3d/external/neural_renderer/examples/data/teapot.obj'
     vertices, faces = neural_renderer.load_obj(obj_file)
 
-    renderer = NMR()
-    renderer.to_gpu(device=0)
+    renderer = NMR(cuda_device=0)
 
     masks = renderer.forward_mask(vertices[None, :, :], faces[None, :, :])
     print(np.sum(masks))

@@ -26,3 +26,5 @@ p3d_segkps*
 CUB_200_2011/
 attributes.txt
 *.orig
+*.old
+*.dist

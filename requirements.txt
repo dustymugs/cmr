@@ -1,5 +1,5 @@
 absl-py==0.1.10
-chainer==3.3.0
+#chainer==3.3.0
 cupy==2.3.0
 Cython==0.27.3
 h5py==2.7.1
@@ -18,5 +18,5 @@ scipy==1.0.0
 torchfile
 tqdm==4.19.5
 visdom==0.1.7
-#neural-renderer-pytorch
+neural-renderer-pytorch
 git+https://github.com/dustymugs/PerceptualSimilarity.git
