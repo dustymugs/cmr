@@ -12,7 +12,7 @@ import time
 import pdb
 from absl import flags
 
-import scipy.misc
+import skimage
 
 from ..utils.visualizer import Visualizer
 
@@ -98,7 +98,7 @@ class Tester():
             os.makedirs(imgs_dir)
         for k in visuals:
             img_path = osp.join(imgs_dir, k + '.png')
-            scipy.misc.imsave(img_path, visuals[k])
+            skimage.io.imsave(img_path, visuals[k])
         self.vis_iter += 1
 
     def define_model(self):

@@ -11,7 +11,6 @@ from absl import flags
 import os
 import os.path as osp
 import numpy as np
-import scipy.misc
 import torch
 import torchvision
 import scipy.io as sio
