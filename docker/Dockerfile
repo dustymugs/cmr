@@ -1,5 +1,7 @@
 #
-# docker build -f Dockerfile -t cmr .
+# from parent directory of docker/Dockerfile...
+#
+# docker build -f docker/Dockerfile -t cmr .
 #
 
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
@@ -43,13 +45,15 @@ RUN conda install -c pytorch -y pytorch torchvision && \
     conda clean -yt
 
 # jupyter script
-COPY start_jupyter.sh /usr/local/bin
+COPY docker/start_jupyter.sh /usr/local/bin
 
 # init script
-COPY init_cmr.sh /usr/local/bin
+COPY requirements.txt /tmp
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -rf /tmp/requirements.txt
 
 # test script
-COPY test_gpu.py /usr/local/bin
+COPY docker/test_gpu.py /usr/local/bin
 
 # add user... purely needed for octave-gui to run from docker to X11
 RUN useradd -ms /bin/bash cmr

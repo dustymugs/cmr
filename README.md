@@ -41,16 +41,6 @@ cd /cmr
 docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 -p 8097:8097 cmr bash
 ```
 
-#### Install CMR Dependencies
-
-Once within the Docker Container, run:
-
-```
-init_cmr.sh
-```
-
-This will install all the requirements of CMR
-
 ### Demo
 
 1. Download the trained model into the `/cmr` directory. You should see `cmr/cachedir/snapshots/bird_net/`
