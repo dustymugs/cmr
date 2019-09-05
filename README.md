@@ -5,10 +5,10 @@ This repo is a fork of the [main project repo](https://github.com/akanazawa/cmr)
 - [X] Docker image to sandbox the project
 - [X] Octave support as alternative to MatLab for preprocessing scripts
 - [X] Add and enhance documentation with regards to training and data files
-- [ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
 - [X] Updated PyTorch support (1.2+)
-- [ ] Updated Python dependencies
-- [ ] Python3 support
+- [X] Updated Python dependencies
+- [X] Python3 support
+- [ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
 - [ ] Replace MatLab code with pure Python implementation
 
 # Learning Category-Specific Mesh Reconstruction from Image Collections
@@ -49,7 +49,7 @@ Once within the Docker Container, run:
 init_cmr.sh
 ```
 
-This will install all the requirements of CMR and external dependencies (e.g. Perceptual loss)
+This will install all the requirements of CMR
 
 ### Demo
 

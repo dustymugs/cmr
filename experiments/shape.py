@@ -45,6 +45,7 @@ flags.DEFINE_float('vert2kp_loss_wt', .16, 'reg to vertex assignment')
 flags.DEFINE_float('tex_loss_wt', .5, 'weights to tex loss')
 flags.DEFINE_float('tex_dt_loss_wt', .5, 'weights to tex dt loss')
 flags.DEFINE_boolean('use_gtpose', True, 'if true uses gt pose for projection, but camera still gets trained.')
+flags.DEFINE_boolean('include_weighted', False, 'if True, include weighted loss values to loss output')
 
 opts = flags.FLAGS
 
@@ -290,6 +291,7 @@ class ShapeTrainer(train_utils.Trainer):
         }
 
     def get_current_scalars(self):
+        opts = self.opts
         sc_dict = OrderedDict([
             ('smoothed_total_loss', self.smoothed_total_loss),
             ('total_loss', self.total_loss.item()),
@@ -300,9 +302,22 @@ class ShapeTrainer(train_utils.Trainer):
             ('tri_loss', self.triangle_loss.item()),
             ('cam_loss', self.cam_loss.item()),
         ])
+
+        if opts.include_weighted:
+            sc_dict['weighted_kp_loss'] = opts.kp_loss_wt * sc_dict['kp_loss']
+            sc_dict['weighted_mask_loss'] = opts.mask_loss_wt * sc_dict['mask_loss']
+            sc_dict['weighted_vert2kp_loss'] = opts.vert2kp_loss_wt * sc_dict['vert2kp_loss']
+            sc_dict['weighted_deform_reg'] = opts.deform_reg_wt * sc_dict['deform_reg']
+            sc_dict['weighted_tri_loss'] = opts.triangle_reg_wt * sc_dict['tri_loss']
+            sc_dict['weighted_cam_loss'] = opts.cam_loss_wt * sc_dict['cam_loss']
+
         if self.opts.texture:
             sc_dict['tex_loss'] = self.tex_loss.item()
             sc_dict['tex_dt_loss'] = self.tex_dt_loss.item()
+
+            if opts.include_weighted:
+                sc_dict['weighted_tex_loss'] = opts.tex_loss_wt * sc_dict['tex_loss']
+                sc_dict['weighted_tex_dt_loss'] = opts.tex_dt_loss_wt * sc_dict['tex_dt_loss']
 
         return sc_dict
 

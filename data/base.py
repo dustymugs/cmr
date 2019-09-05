@@ -16,9 +16,9 @@ from __future__ import print_function
 import os.path as osp
 import numpy as np
 
-import scipy.misc
 import scipy.linalg
 import scipy.ndimage.interpolation
+import skimage
 from absl import flags, app
 
 import torch
@@ -74,7 +74,7 @@ class BaseDataset(Dataset):
         sfm_pose[2] = transformations.quaternion_from_matrix(sfm_rot, isprecise=True)
 
         img_path = osp.join(self.img_dir, str(data.rel_path))
-        img = scipy.misc.imread(img_path) / 255.0
+        img = skimage.io.imread(img_path) / 255.0
         # Some are grayscale:
         if len(img.shape) == 2:
             img = np.repeat(np.expand_dims(img, 2), 3, axis=2)

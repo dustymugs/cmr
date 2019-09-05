@@ -70,16 +70,6 @@ class NeuralRenderer(torch.nn.Module):
         # Flipping the y-axis here to make it align with the image coordinate system!
         v[:, :, 1] *= -1
 
-        def unflip_y_axis(grad):
-
-            grad_ = grad.clone()
-            grad_[:, :, 1] *= -1
-
-            return grad_
-
-        if v.requires_grad:
-            v.register_hook(unflip_y_axis)
-
         if textures is not None:
 
             return self.renderer.render_rgb(v, f, textures)

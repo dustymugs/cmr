@@ -58,14 +58,18 @@ su -c octave - cmr
 ```
 
 ### Model training
-Change the value of `--name` to whatever you want to call the model and change `--cub_dir` to where you extracted the CUB dataset. See `experiments/shape.py` to adjust
-hyper-parameters (for eg. increase `tex_loss_wt` and `text_dt_loss_wt` if you
-want better texture, increase texture resolution with `tex_size`).
-See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training options.
+
+Start the Visdom server
+
+```
+python -m visdom.server > /cmr/visdom.log 2>&1 &
+```
+
+Change the value of `--name` to whatever you want to call the model and change `--cub_dir` to where you extracted the CUB dataset. See `experiments/shape.py` to adjust hyper-parameters (for eg. increase `tex_loss_wt` and `text_dt_loss_wt` if you want better texture, increase texture resolution with `tex_size`). See `nnutils/mesh_net.py` and `nnutils/train_utils.py` for more model/training options.
 
 ```
 cd /
-python -m cmr.experiments.shape --name=bird_net --display_port=8097 --cub_dir=/cmr/CUB_200_2011/
+python -m cmr.experiments.shape --name=bird_net --display_visuals --plot_scalars --cub_dir=/cmr/CUB_200_2011/
 ```
 
 To monitor training progress, use your browser to connect to the Visdom server at port 8097

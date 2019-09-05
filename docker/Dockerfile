@@ -39,15 +39,17 @@ RUN cd /tmp && \
     conda install -y conda python=${python_version} six wheel numpy pillow opencv && \
     conda clean -yt
 
-RUN conda create --name cmr python=2.7 && \
-    /bin/bash -c ". activate cmr && conda install -c pytorch -y pytorch torchvision && conda clean -yt" && \
-    echo "source activate cmr" >> ~/.bashrc
+RUN conda install -c pytorch -y pytorch torchvision && \
+    conda clean -yt
 
 # jupyter script
 COPY start_jupyter.sh /usr/local/bin
 
 # init script
 COPY init_cmr.sh /usr/local/bin
+
+# test script
+COPY test_gpu.py /usr/local/bin
 
 # add user... purely needed for octave-gui to run from docker to X11
 RUN useradd -ms /bin/bash cmr
