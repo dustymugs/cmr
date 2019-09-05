@@ -21,7 +21,7 @@ class VisRenderer(object):
     """
 
     def __init__(self, img_size, faces, t_size=3):
-        self.renderer = NeuralRenderer(img_size)
+        self.renderer = NeuralRenderer(img_size, cuda_device=0)
         self.faces = torch.IntTensor(faces).cuda()
         if self.faces.dim() == 2:
             self.faces = torch.unsqueeze(self.faces, 0)
@@ -35,7 +35,6 @@ class VisRenderer(object):
         # This is median quaternion from sfm_pose
         # rot = np.array([ 0.66553962,  0.31033762, -0.02249813,  0.01267084])
         # This is the side view:
-        import cv2
         R0 = cv2.Rodrigues(np.array([np.pi / 3, 0, 0]))[0]
         R1 = cv2.Rodrigues(np.array([0, np.pi / 2, 0]))[0]
         R = R1.dot(R0)
@@ -86,7 +85,6 @@ class VisRenderer(object):
         """
         vert is N x 3, torch FloatTensor
         """
-        import cv2
         new_rot = cv2.Rodrigues(np.deg2rad(deg) * np.array(axis))[0]
         new_rot = convert_as(torch.FloatTensor(new_rot), vert)
 
@@ -111,7 +109,6 @@ class VisRenderer(object):
         if new_ext is None:
             new_ext = [0.6, 0, 0]
         # Cam is 7D: [s, tx, ty, rot]
-        import cv2
         #cam = asVariable(cam)
         quat = cam[-4:].view(1, 1, -1)
         R = transformations.quaternion_matrix(
@@ -149,7 +146,7 @@ class VisRenderer(object):
         self.renderer.set_bgcolor(color)
 
     def set_light_dir(self, direction, int_dir=0.8, int_amb=0.8):
-        renderer = self.renderer.renderer.renderer
+        renderer = self.renderer.renderer
         renderer.light_direction = direction
         renderer.light_intensity_directional = int_dir
         renderer.light_intensity_ambient = int_amb

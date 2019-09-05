@@ -84,7 +84,7 @@ class ShapeTrainer(train_utils.Trainer):
         self.faces = faces.repeat(opts.batch_size, 1, 1)
 
         self.renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
-        self.renderer_predcam = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id) #for camera loss via projection
+        #self.renderer_predcam = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id) #for camera loss via projection
 
         # Need separate NMR for each fwd/bwd call.
         if opts.texture:
@@ -94,7 +94,6 @@ class ShapeTrainer(train_utils.Trainer):
 
         # For visualization
         self.vis_rend = bird_vis.VisRenderer(opts.img_size, faces.data.cpu().numpy())
-        return
 
     def init_dataset(self):
         opts = self.opts
@@ -149,6 +148,7 @@ class ShapeTrainer(train_utils.Trainer):
 
 
     def forward(self):
+
         opts = self.opts
         if opts.texture:
             pred_codes, self.textures = self.model.forward(self.input_imgs)
@@ -189,7 +189,12 @@ class ShapeTrainer(train_utils.Trainer):
             tex_size = self.textures.size(2)
             self.textures = self.textures.unsqueeze(4).repeat(1, 1, 1, 1, tex_size, 1)
   
-            self.texture_pred = self.tex_renderer.forward(self.pred_v.detach(), self.faces, proj_cam.detach(), textures=self.textures)
+            self.texture_pred = self.tex_renderer.forward(
+                self.pred_v.detach(),
+                self.faces,
+                proj_cam.detach(),
+                textures=self.textures
+            )
         else:
             self.textures = None
 
