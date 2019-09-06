@@ -3,7 +3,7 @@
 To use a flag
 
 ```
-... --FLAG_NAME=FLAG_VALUE
+python ... --FLAG_NAME=FLAG_VALUE ...
 ```
 
 Example
@@ -14,7 +14,7 @@ python -m cmr.experiments.shape --name=bird_net --display_visuals --plot_scalars
 
 ## Training Flags
 
-Flags were extracted with the following and then postprocessed
+Extract flags with the following and then postprocess
 
 ```
 cd /cmr
