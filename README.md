@@ -19,6 +19,7 @@ University of California, Berkeley
 In ECCV, 2018
 
 [Project Page](https://akanazawa.github.io/cmr/)
+[Paper](https://arxiv.org/pdf/1803.07549.pdf)
 ![Teaser Image](https://akanazawa.github.io/cmr/resources/images/teaser.png)
 
 ### Docker
