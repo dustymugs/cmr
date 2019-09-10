@@ -8,7 +8,7 @@ This repo is a fork of the [main project repo](https://github.com/akanazawa/cmr)
 - [X] Updated PyTorch support (1.2+)
 - [X] Updated Python dependencies
 - [X] Python3 support
-- [ ] Scripts to reproduce CUB data annotation .mat files (and thus create appropriate files for your own projects)
+- [ ] Scripts to reproduce the structure of CUB data annotation .mat files (and thus create appropriate files for your own projects)
 - [ ] Replace MatLab code with pure Python implementation
 
 # Learning Category-Specific Mesh Reconstruction from Image Collections
