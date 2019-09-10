@@ -22,14 +22,14 @@ tar xf CUB_200_2011.tgz
 
 ```
 cd /cmr
-wget https://drive.google.com/open?id=1aTymi_4runy8g9PbZkRauwdTeFoLwAdo
-tar xf cachedir.tar.gz
+wget https://drive.google.com/open?id=1RZrrZgG0hlIYaExnkR4dkOYIU5ZD4w2E
+tar xf cachedir.tar.bz2
 ```
 
-Expected MD5 hash for cachedir.tar.gz
+Expected MD5 hash for cachedir.tar.bz2
 
 ```
-89842f8937a136bfdd7106e80f88d30f
+15855873508f63bb40a57e29f2d675c9
 ```
 
 #### Computing SfM
