@@ -44,18 +44,18 @@ docker/run_x11.sh --runtime=nvidia -it -v /PATH/TO/cmr:/cmr -p 8888:8888 -p 8097
 
 ### Demo
 
-1. Download the trained model into the `/cmr` directory. You should see `cmr/cachedir/snapshots/bird_net/`
+1. Download the trained model into the `/cmr` directory. You should see `cmr/cachedir/snapshots/bird_net/` (the original trained weights) and `cmr/cachedir/snapshots/bird2/` (weights trained with this Docker image)
 
 ```
 cd /cmr
-wget https://drive.google.com/open?id=1Fz3FjmHTDDKQP-vcXKEPlA2hHttRvOdc
-tar xf model.tar.gz
+wget https://drive.google.com/open?id=1WVDe3H6QK5K8HCwkKekdEMIUY0Mo0ATD
+tar xf model.tar.bz2
 ```
 
-Expected MD5 hash for model.tar.gz
+Expected MD5 hash for model.tar.bz2
 
 ```
-b21c87ec5dae4414a21086d631afdb30
+fe61bb79e5893c0a6a30749cb93307f1
 ```
 
 2. Run the demo:
@@ -68,6 +68,8 @@ python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_dat
 python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/img2.jpg
 python -m cmr.demo --name bird_net --num_train_epoch 500 --img_path cmr/demo_data/birdie.jpg
 ```
+
+Substitute `bird2` for `bird_net` to use the weights trained with this Docker image
 
 ### Training
 Please see [doc/train.md](doc/train.md)
