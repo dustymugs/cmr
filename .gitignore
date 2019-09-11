@@ -10,6 +10,7 @@ ipyNb
 *.out
 *.gz
 *.t*gz
+*.bz2
 *.blg
 *.aux
 *.bbl
