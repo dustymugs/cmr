@@ -66,7 +66,7 @@ ans =  500
 >> images(1).height
 ans =  336
 ```
-  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X, element 2 = Y, element 3 = "is present" boolean flag
+  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag
 ```
 >> images(1).parts
 ans =
@@ -81,6 +81,11 @@ Variables in the current scope:
    Attr Name                 Size                     Bytes  Class
    ==== ====                 ====                     =====  =====
         images(1).parts      3x15                       360  double
+```
+Index to bird keypoint is:
+```
+index = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
+names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
 ```
   * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean (0/1) array of same dimension as image indicating which pixels are masked
 
