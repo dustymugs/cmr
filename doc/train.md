@@ -18,18 +18,18 @@ wget http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz
 tar xf CUB_200_2011.tgz
 ```
 
-2. Download our CUB annotation mat files and pre-computed SfM outputs.  For structural details regarding these files, read [doc/files.md](files.md)
+2. Download our CUB annotation mat files and pre-computed SfM outputs (~30MB).  For structural details regarding these files, read [doc/files.md](files.md)
 
 ```
 cd /cmr
-wget https://drive.google.com/open?id=1RZrrZgG0hlIYaExnkR4dkOYIU5ZD4w2E
-tar xf cachedir.tar.bz2
+wget https://drive.google.com/open?id=1LCq949ppsptaa7Bsp-uYC6B6YF10huZY
+tar xf cachedir.tar.xz
 ```
 
-Expected MD5 hash for cachedir.tar.bz2
+Expected MD5 hash for cachedir.tar.xz
 
 ```
-15855873508f63bb40a57e29f2d675c9
+07785fc0027f6370027f0106125350d2
 ```
 
 #### Computing SfM
