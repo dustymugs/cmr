@@ -9,8 +9,9 @@ ipyNb
 *.key
 *.out
 *.gz
-*.t*gz
 *.bz2
+*.xz
+*.t*z
 *.blg
 *.aux
 *.bbl
