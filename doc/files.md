@@ -44,7 +44,7 @@ ans = 1
 >> images(1).test
 ans = 0
 ```
-  * bbox - bounding box of the bird in image in pixel coordinates
+  * bbox - bounding box of the bird in image in pixel coordinates (probably from Mask-RCNN)
 ```
 >> images(1).bbox
 ans =
@@ -66,7 +66,7 @@ ans =  500
 >> images(1).height
 ans =  336
 ```
-  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag
+  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag (could come from any keypoint detection pipeline, e.g. DeepLabCut)
 ```
 >> images(1).parts
 ans =
@@ -87,7 +87,7 @@ Index to bird keypoint is:
 index = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
 ```
-  * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean (0/1) array of same dimension as image indicating which pixels are masked
+  * mask - segmentation mask of the bird in the image (probably from Mask-RCNN). A boolean (0/1) array of same dimension as image indicating which pixels are masked
 
 ```
 >> images(1).mask
