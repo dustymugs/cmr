@@ -84,6 +84,13 @@ ans =
     x2 = 291
     y2 = 293
 
+>> whos('images(1).bbox')
+Variables in the current scope:
+
+   Attr Name                Size                     Bytes  Class
+   ==== ====                ====                     =====  =====
+        images(1).bbox      1x1                         16  struct
+
 >> whos('images(1).bbox.x1')
 Variables in the current scope:
 
