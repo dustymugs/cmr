@@ -28,21 +28,49 @@ images =
 ```
 >> images(1).id
 ans = 2
+
+>> whos('images(1).id')
+Variables in the current scope:
+
+   Attr Name              Size                     Bytes  Class
+   ==== ====              ====                     =====  =====
+        images(1).id      1x1                          4  int32
 ```
   * rel_path - relative path to image data
 ```
 >> images(1).rel_path
 ans = 001.Black_footed_Albatross/Black_Footed_Albatross_0009_34.jpg
+
+>> whos('images(1).rel_path')
+Variables in the current scope:
+
+   Attr Name                    Size                     Bytes  Class
+   ==== ====                    ====                     =====  =====
+        images(1).rel_path      1x61                        61  char
 ```
   * train - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).train
 ans = 1
+
+>> whos('images(1).train')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        images(1).train      1x1                          1  logical
 ```
   * test - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).test
 ans = 0
+
+>> whos('images(1).test')
+Variables in the current scope:
+
+   Attr Name                Size                     Bytes  Class
+   ==== ====                ====                     =====  =====
+        images(1).test      1x1                          1  logical
 ```
   * bbox - bounding box of the bird in image in pixel coordinates (probably from Mask-RCNN)
 ```
@@ -67,11 +95,25 @@ Variables in the current scope:
 ```
 >> images(1).width
 ans =  500
+
+>> whos('images(1).width')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        images(1).width      1x1                          8  double
 ```
   * height - height of image. number of pixels along the Y axis
 ```
 >> images(1).height
 ans =  336
+
+>> whos('images(1).height')
+Variables in the current scope:
+
+   Attr Name                  Size                     Bytes  Class
+   ==== ====                  ====                     =====  =====
+        images(1).height      1x1                          8  double
 ```
   * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag (could come from any keypoint detection pipeline, e.g. DeepLabCut)
 ```
@@ -115,6 +157,13 @@ Variables in the current scope:
 ```
 >> images(1).class_id
 ans = 1
+
+>> whos('images(1).class_id')
+Variables in the current scope:
+
+   Attr Name                    Size                     Bytes  Class
+   ==== ====                    ====                     =====  =====
+        images(1).class_id      1x1                          4  int32
 ```
 #### Required fields of `images` struct array
 
