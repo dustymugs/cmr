@@ -1,7 +1,7 @@
 # Data File Structures
 
 ## CUB annotation mat files
-  * in the CUB annotation mat files, all pixel coordinates are **1-based** (vs the normal 0-based for X and Y axes)
+  * in the CUB annotation mat files, all pixel coordinates are from zero (0) to max value (width or height) (e.g. if an image is 100 pixels width and 50 pixels height, valid range of pixel coordinates are 0 - 100 and 0 - 50)
   * All CUB annotation mat files (e.g. `train_cub_cleaned.mat`, `testval_cub_cleaned.mat`) contain only one variable: `images`
 
 ### Details of `images` struct array
