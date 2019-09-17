@@ -55,6 +55,13 @@ ans =
     y1 = 30
     x2 = 291
     y2 = 293
+
+>> whos('images(1).bbox.x1')
+Variables in the current scope:
+
+   Attr Name                   Size                     Bytes  Class
+   ==== ====                   ====                     =====  =====
+        images(1).bbox.x1      1x1                          4  int32
 ```
   * width - width of image. number of pixels along the X axis
 ```
@@ -88,7 +95,6 @@ index = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
 ```
   * mask - segmentation mask of the bird in the image (probably from Mask-RCNN). A boolean (0/1) array of same dimension as image indicating which pixels are masked
-
 ```
 >> images(1).mask
 ans =
