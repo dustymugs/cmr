@@ -1,18 +1,16 @@
-function split_valtest(project_name)
+function split_valtest(project_dir)
     % Splits the test set into val / test.
 
-    fprintf('Splitting valtest: %s\n', project_name)
+    fprintf('Splitting valtest\n')
 
-    cache_dir = fullfile(pwd, '..', '..', 'cachedir', project_name);
-
-    orig_path = fullfile(cache_dir, 'data', 'testval_cleaned.mat');
-    orig_sfm_path = fullfile(cache_dir, 'sfm', 'anno_testval.mat');
+    orig_path = fullfile(project_dir, 'data', 'testval_cleaned.mat');
+    orig_sfm_path = fullfile(project_dir, 'sfm', 'anno_testval.mat');
 
     % New mat.
-    val_path = fullfile(cache_dir, 'data', 'val_cleaned.mat');
-    test_path = fullfile(cache_dir, 'data', 'test_cleaned.mat');
-    val_sfm_path = fullfile(cache_dir, 'sfm', 'anno_val.mat');
-    test_sfm_path = fullfile(cache_dir, 'sfm', 'anno_test.mat');
+    val_path = fullfile(project_dir, 'data', 'val_cleaned.mat');
+    test_path = fullfile(project_dir, 'data', 'test_cleaned.mat');
+    val_sfm_path = fullfile(project_dir, 'sfm', 'anno_val.mat');
+    test_sfm_path = fullfile(project_dir, 'sfm', 'anno_test.mat');
 
     % Load all data. This is already cleaned
     load(orig_path, 'images');

@@ -1,21 +1,19 @@
-function mean_shape(project_name, split_name, kp_names, kp_perm)
+function mean_shape(project_dir, split_name, kp_names, kp_perm)
 
-    fprintf('Computing mean shape: %s %s\n', project_name, split_name)
+    fprintf('Computing mean shape: %s\n', split_name)
 
-    cache_dir = fullfile(pwd, '..', '..', 'cachedir', project_name);
+    mean_shape_dir = fullfile(project_dir, 'sfm');
+    mean_shape_path = fullfile(mean_shape_dir, ['anno_' split_name '.mat']);
+    mkdirOptional(mean_shape_dir);
 
-    out_dir = fullfile(cache_dir, 'sfm');
-    out_path = fullfile(out_dir, ['anno_' split_name '.mat']);
-    mkdirOptional(out_dir);
+    data_file = fullfile(project_dir, 'data', [split_name '_cleaned.mat']);
+    var = load(data_file);
 
-    annotation_file = fullfile(cache_dir, 'data', [split_name '_cleaned.mat']);
-    var = load(annotation_file);
+    fprintf('Input File: %s\n', data_file)
+    fprintf('Output File: %s\n', mean_shape_path)
 
-    fprintf('CUB File: %s\n', annotation_file)
-    fprintf('Out Path: %s\n', out_path)
-
-    if ~exist(out_path)
-        fprintf('Computing new sfm\n')
+    if ~exist(mean_shape_path)
+        fprintf('Computing new mean shape\n')
         kps_all = [];
         vis_all = [];
         box_scale = [];
@@ -126,11 +124,11 @@ function mean_shape(project_name, split_name, kp_names, kp_perm)
         fprintf('conv_tri:\n')
         disp(conv_tri)
 
-        %save(out_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
-        save(out_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
+        %save(mean_shape_path, 'sfm_anno', 'S', 'conv_tri', 'conv_tri_', 'X', '-v7');
+        save(mean_shape_path, 'sfm_anno', 'S', 'conv_tri', '-v7');
     else
         fprintf('Loading existing sfm\n')
-        load(out_path, 'sfm_anno', 'S',  'conv_tri');
+        load(mean_shape_path, 'sfm_anno', 'S',  'conv_tri');
     end
 end
 
