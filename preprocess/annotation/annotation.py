@@ -382,51 +382,6 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
 
         return np.array(kp_data).transpose()
 
-        frame_data = {}
-        start = time.time()
-        for frame_num in range(num_frames):
-
-            data = {
-                'x': [],
-                'y': [],
-                'present': []
-            }
-
-            for kp in keypoints:
-                data['x'].append(int(round(df[scorer][kp]['x'][frame_num])))
-                data['y'].append(int(round(df[scorer][kp]['y'][frame_num])))
-                data['present'].append(
-                    df[scorer][kp]['likelihood'][frame_num] >= 0.99
-                )
-                #for p in parameters:
-                #    data[p].append(
-                #        int(round(df[scorer][kp][p][frame_num]))
-                #        if p in ('x', 'y')
-                #        else df[scorer][kp][p][frame_num]
-                #    )
-            print('elapsed (1): {}'.format(time.time() - start))
-
-            # reject frame instead of excluding keypoint?
-            #data['present'] = [
-            #    l >= 0.99
-            #    for l in data['likelihood']
-            #]
-
-            frame_data[frame_num] = np.array(
-                [
-                    np.array(data['x']),
-                    np.array(data['y']),
-                    np.array(data['present'])
-                ],
-                dtype=np.uint16
-            )
-
-            del data
-            print('elapsed (2): {}'.format(time.time() - start))
-        print('elapsed (3): {}'.format(time.time() - start))
-
-        return frame_data
-
 @click.command()
 @click.argument('action', type=click.Choice(('update', 'verify')))
 @click.argument('annotation', type=click.Path())
