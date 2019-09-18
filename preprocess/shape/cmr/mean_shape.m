@@ -144,7 +144,7 @@ function [im, part] = load_image(root_dir, data)
     part = data.parts;
 end
 
-function im =  myimread(impath)
+function im = myimread(impath)
     im = imread(impath);
     if size(im, 3) == 1
         im = repmat(im, [1,1,3]);
