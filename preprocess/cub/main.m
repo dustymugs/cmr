@@ -1,3 +1,4 @@
+addpath('../cmr');
 addpath('../utils');
 addpath('../sfm');
 addpath('../quaternions');
@@ -16,8 +17,8 @@ if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
 end
 
 fprintf('SfM for train\n')
-cub_sfm('train');
+mean_shape('train');
 fprintf('SfM for testval\n')
-cub_sfm('testval');
+mean_shape('testval');
 fprintf('Splitting\n')
-split_cub();
+split_valtest();

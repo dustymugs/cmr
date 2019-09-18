@@ -1,4 +1,4 @@
-function split_cub()
+function split_valtest()
     % Splits the test set of cub into 
     % val / test.
 

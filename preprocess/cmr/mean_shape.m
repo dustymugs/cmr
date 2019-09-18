@@ -1,4 +1,4 @@
-function cub_sfm(split_name)
+function mean_shape(split_name)
 
     cub_cache_dir = fullfile(pwd, '..', '..', 'cachedir', 'cub');
 
