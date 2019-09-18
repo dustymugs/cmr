@@ -278,17 +278,25 @@ class AnnotationManager(object):
                 )
                 rel_path_indices.append(self._images.length - 1)
 
+    def _save_annotation_data_structure(self):
+
+        self.annotation_data = {
+            'images': self._images.data
+        }
+
     def update(self):
 
-        #assert self.video_file is not None or self.image_file is not None, \
-        #    'Video or Image file must be provided'
-        #assert self.mask_file is not None, \
-        #    'Mask file must be provided'
-        #assert self.annotation_file is not None, \
-        #    'Annotation file must be provided'
+        assert self.video_file is not None or self.image_file is not None, \
+            'Video or Image file must be provided'
+        assert self.mask_file is not None, \
+            'Mask file must be provided'
+        assert self.annotation_file is not None, \
+            'Annotation file must be provided'
 
         self._load_annotation_data(raise_error=False)
         self._load_annotation_data_structure()
+
+        the_file = self.video_file or self.image_file
 
         '''
 ipdb> self._images.data[0]['rel_path']                                                       
@@ -313,10 +321,30 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
        [  1,   1,   0,   1,   1,   1,   0,   1,   1,   1,   1,   1,   1,
           1,   1]], dtype=uint16)
        '''
-        import ipdb;ipdb.set_trace()
 
         parts = self._load_keypoint_data()
         masks_boxes = self._load_masks_boxes()
+
+        import ipdb;ipdb.set_trace()
+        # TODO: delete any reference to the_file
+
+        # add rows to self._images
+        dtype = self.STRUCTURED_DTYPES['images']
+        for frame_num, mask_box in masks_boxes.items():
+
+            row = np.array(
+                [(
+                    the_file,
+                    mask_box['box'],
+                    parts[frame_num],
+                    mask_box['mask'],
+                )],
+                dtype=dtype
+            )
+            self._images.extend(row)
+
+        self._save_annotation_data_structure()
+        self._save_annotation_data()
 
     def _load_masks_boxes(self):
 
@@ -328,21 +356,17 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
 
             dtype = self.STRUCTURED_DTYPES['bbox']
             for row in table.iterrows():
+                box = row['box']
+                box[0:2] = np.floor(box[0:2])
+                box[2:4] = np.ceil(box[2:4])
                 masks_boxes[row['frame_num']] = {
-                    'mask': row['mask'].astype(np.uint8),
+                    'mask': row['mask'].astype(np.bool_),
                     'box': np.array( # WTF
                         [[
-                            tuple(np.array([[
-                                max(math.floor(v), 0)
-                                if idx in (0, 3)
-                                else min(
-                                    math.ceil(v),
-                                    row['mask'].shape[0]
-                                    if idx == 1
-                                    else row['mask'].shape[1]
-                                )
-                            ]], dtype=np.uint32)
-                            for idx, v in enumerate(row['box']))
+                            tuple(
+                                np.array([[v]], dtype=np.uint32)
+                                for v in box
+                            )
                         ]],
                         dtype=dtype
                     ),
@@ -394,6 +418,13 @@ def do_it(action, annotation, mask, keypoint, video, image):
     Utility to update and verify the provided <ANNOTATION> MatLab file for
     consumption by CMR
     '''
+
+    assert (
+        (action == 'update') and (
+            (video is None and image is not None) or
+            (video is not None and image is None)
+        )
+    ), '--video and --image are mutually exclusive. Only one can be provided at one time'
 
     mgr = AnnotationManager(
         annotation_file=annotation,
