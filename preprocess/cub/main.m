@@ -16,9 +16,9 @@ if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
     addpath('../octave');
 end
 
-fprintf('SfM for train\n')
-mean_shape('train');
-fprintf('SfM for testval\n')
-mean_shape('testval');
-fprintf('Splitting\n')
-split_valtest();
+kp_names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
+kp_perm = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
+
+mean_shape('cub', 'train', kp_names, kp_perm);
+mean_shape('cub', 'testval', kp_names, kp_perm);
+split_valtest('cub');

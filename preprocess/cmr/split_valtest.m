@@ -1,19 +1,20 @@
-function split_valtest()
-    % Splits the test set of cub into 
-    % val / test.
+function split_valtest(project_name)
+    % Splits the test set into val / test.
 
-    cub_cache_dir = fullfile(pwd, '..', '..', 'cachedir', 'cub');
+    fprintf('Splitting valtest: %s\n', project_name)
 
-    orig_path = fullfile(cub_cache_dir, 'data', 'testval_cub_cleaned.mat');
-    orig_sfm_path = fullfile(cub_cache_dir, 'sfm', 'anno_testval.mat');
+    cache_dir = fullfile(pwd, '..', '..', 'cachedir', project_name);
+
+    orig_path = fullfile(cache_dir, 'data', 'testval_cleaned.mat');
+    orig_sfm_path = fullfile(cache_dir, 'sfm', 'anno_testval.mat');
 
     % New mat.
-    val_path = fullfile(cub_cache_dir, 'data', 'val_cub_cleaned.mat');
-    test_path = fullfile(cub_cache_dir, 'data', 'test_cub_cleaned.mat');
-    val_sfm_path = fullfile(cub_cache_dir, 'sfm', 'anno_val.mat');
-    test_sfm_path = fullfile(cub_cache_dir, 'sfm', 'anno_test.mat');
+    val_path = fullfile(cache_dir, 'data', 'val_cleaned.mat');
+    test_path = fullfile(cache_dir, 'data', 'test_cleaned.mat');
+    val_sfm_path = fullfile(cache_dir, 'sfm', 'anno_val.mat');
+    test_sfm_path = fullfile(cache_dir, 'sfm', 'anno_test.mat');
 
-    % Load all data. % This is already cleaned
+    % Load all data. This is already cleaned
     load(orig_path, 'images');
     load(orig_sfm_path, 'sfm_anno', 'S');
 

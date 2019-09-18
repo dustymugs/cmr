@@ -1,18 +1,17 @@
-function mean_shape(split_name)
+function mean_shape(project_name, split_name, kp_names, kp_perm)
 
-    cub_cache_dir = fullfile(pwd, '..', '..', 'cachedir', 'cub');
+    fprintf('Computing mean shape: %s %s\n', project_name, split_name)
 
-    out_dir = fullfile(cub_cache_dir, 'sfm');
+    cache_dir = fullfile(pwd, '..', '..', 'cachedir', project_name);
+
+    out_dir = fullfile(cache_dir, 'sfm');
     out_path = fullfile(out_dir, ['anno_' split_name '.mat']);
     mkdirOptional(out_dir);
 
-    cub_file = fullfile(cub_cache_dir, 'data', [split_name '_cub_cleaned.mat']);
+    annotation_file = fullfile(cache_dir, 'data', [split_name '_cleaned.mat']);
+    var = load(annotation_file);
 
-    kp_names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
-    kp_perm = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
-    var = load(cub_file);
-
-    fprintf('CUB File: %s\n', cub_file)
+    fprintf('CUB File: %s\n', annotation_file)
     fprintf('Out Path: %s\n', out_path)
 
     if ~exist(out_path)
@@ -26,10 +25,10 @@ function mean_shape(split_name)
 
         %% Construct keypoint matrix
         fprintf('Construct keypoint matrix\n')
-        n_birds = length(var.images);
-        box_trans = zeros(n_birds, 2);
-        fprintf('Processing birds')
-        for b = 1:n_birds
+        n_images = length(var.images);
+        box_trans = zeros(n_images, 2);
+        fprintf('Processing images')
+        for b = 1:n_images
             % bbox to normalize
             bbox_h = var.images(b).bbox.y2 - var.images(b).bbox.y1 + 1;
             bbox_w = var.images(b).bbox.x2 - var.images(b).bbox.x1 + 1;
@@ -94,9 +93,9 @@ function mean_shape(split_name)
         [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
         %%
-        fprintf('SfM of each bird as transformation from mean shape\n')
+        fprintf('SfM of each image as transformation from mean shape\n')
         sfm_anno = struct;
-        for bx = 1:n_birds
+        for bx = 1:n_images
             b = 2*bx-1;
             motion = M([2*b-1, 2*b], :);
             scale = norm(motion(1,:));
@@ -136,8 +135,8 @@ function mean_shape(split_name)
 end
 
 
-function [im, part] = load_image(cub_dir, data)
-    impath = fullfile(cub_dir, 'images', data.rel_path);
+function [im, part] = load_image(root_dir, data)
+    impath = fullfile(root_dir, 'images', data.rel_path);
     if exist(impath)
         im = myimread(impath);
     else
