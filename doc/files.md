@@ -1,7 +1,7 @@
 # Data File Structures
 
 ## CUB annotation mat files
-  * in the CUB annotation mat files, all pixel coordinates are **1-based** (vs the normal 0-based for X and Y axes)
+  * in the CUB annotation mat files, all pixel coordinates are from zero (0) to max value (width or height) (e.g. if an image is 100 pixels width and 50 pixels height, valid range of pixel coordinates are 0 - 100 and 0 - 50)
   * All CUB annotation mat files (e.g. `train_cub_cleaned.mat`, `testval_cub_cleaned.mat`) contain only one variable: `images`
 
 ### Details of `images` struct array
@@ -28,23 +28,51 @@ images =
 ```
 >> images(1).id
 ans = 2
+
+>> whos('images(1).id')
+Variables in the current scope:
+
+   Attr Name              Size                     Bytes  Class
+   ==== ====              ====                     =====  =====
+        images(1).id      1x1                          4  int32
 ```
   * rel_path - relative path to image data
 ```
 >> images(1).rel_path
 ans = 001.Black_footed_Albatross/Black_Footed_Albatross_0009_34.jpg
+
+>> whos('images(1).rel_path')
+Variables in the current scope:
+
+   Attr Name                    Size                     Bytes  Class
+   ==== ====                    ====                     =====  =====
+        images(1).rel_path      1x61                        61  char
 ```
   * train - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).train
 ans = 1
+
+>> whos('images(1).train')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        images(1).train      1x1                          1  logical
 ```
   * test - boolean (0/1) flag indicating if row is part of training dataset
 ```
 >> images(1).test
 ans = 0
+
+>> whos('images(1).test')
+Variables in the current scope:
+
+   Attr Name                Size                     Bytes  Class
+   ==== ====                ====                     =====  =====
+        images(1).test      1x1                          1  logical
 ```
-  * bbox - bounding box of the bird in image in pixel coordinates
+  * bbox - bounding box of the bird in image in pixel coordinates (probably from Mask-RCNN)
 ```
 >> images(1).bbox
 ans =
@@ -55,18 +83,46 @@ ans =
     y1 = 30
     x2 = 291
     y2 = 293
+
+>> whos('images(1).bbox')
+Variables in the current scope:
+
+   Attr Name                Size                     Bytes  Class
+   ==== ====                ====                     =====  =====
+        images(1).bbox      1x1                         16  struct
+
+>> whos('images(1).bbox.x1')
+Variables in the current scope:
+
+   Attr Name                   Size                     Bytes  Class
+   ==== ====                   ====                     =====  =====
+        images(1).bbox.x1      1x1                          4  int32
 ```
   * width - width of image. number of pixels along the X axis
 ```
 >> images(1).width
 ans =  500
+
+>> whos('images(1).width')
+Variables in the current scope:
+
+   Attr Name                 Size                     Bytes  Class
+   ==== ====                 ====                     =====  =====
+        images(1).width      1x1                          8  double
 ```
   * height - height of image. number of pixels along the Y axis
 ```
 >> images(1).height
 ans =  336
+
+>> whos('images(1).height')
+Variables in the current scope:
+
+   Attr Name                  Size                     Bytes  Class
+   ==== ====                  ====                     =====  =====
+        images(1).height      1x1                          8  double
 ```
-  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag
+  * parts - locations of the bird's keypoints in pixel coordinates. For each row in array, array index = keypoint id, element 1 = X coordinate, element 2 = Y coordinate, element 3 = "is keypoint present?" boolean flag (could come from any keypoint detection pipeline, e.g. DeepLabCut)
 ```
 >> images(1).parts
 ans =
@@ -87,8 +143,7 @@ Index to bird keypoint is:
 index = [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15];
 names = {'Back', 'Beak', 'Belly', 'Breast', 'Crown', 'FHead', 'LEye', 'LLeg', 'LWing', 'Nape', 'REye', 'RLeg', 'RWing', 'Tail', 'Throat'};
 ```
-  * mask - segmentation mask of the bird in the image from Mask-RCNN. A boolean (0/1) array of same dimension as image indicating which pixels are masked
-
+  * mask - segmentation mask of the bird in the image (probably from Mask-RCNN). A boolean (0/1) array of same dimension as image indicating which pixels are masked
 ```
 >> images(1).mask
 ans =
@@ -109,6 +164,13 @@ Variables in the current scope:
 ```
 >> images(1).class_id
 ans = 1
+
+>> whos('images(1).class_id')
+Variables in the current scope:
+
+   Attr Name                    Size                     Bytes  Class
+   ==== ====                    ====                     =====  =====
+        images(1).class_id      1x1                          4  int32
 ```
 #### Required fields of `images` struct array
 
