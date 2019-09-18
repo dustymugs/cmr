@@ -321,25 +321,6 @@ class AnnotationManager(object):
 
         the_file = self.video_file or self.image_file
 
-        '''
-ipdb> row                                                                                    
-array([(array(['001.Black_footed_Albatross/Black_Footed_Albatross_0085_92.jpg'],
-      dtype='<U61'), array([[(array([[33]], dtype=int32), array([[53]], dtype=int32), array([[283]], dtype=int32), array([[447]], dtype=int32))]],
-      dtype=[('x1', 'O'), ('y1', 'O'), ('x2', 'O'), ('y2', 'O')]), array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
-         82, 228],
-       [180, 202,   0, 213, 181, 187,   0, 190, 108, 181, 189, 226, 267,
-        199, 204],
-       [  1,   1,   0,   1,   1,   1,   0,   1,   1,   1,   1,   1,   1,
-          1,   1]], dtype=uint16), array([[0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       ...,
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0]], dtype=uint8))],
-      dtype=[('rel_path', 'O'), ('bbox', 'O'), ('parts', 'O'), ('mask', 'O')])
-        '''
-
         parts = self._load_keypoint_data()
         masks_boxes = self._load_masks_boxes()
 
