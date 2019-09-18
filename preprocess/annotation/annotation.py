@@ -1,5 +1,6 @@
 import click
 from contextlib import closing
+import copy
 import math
 import numpy as np
 import os
@@ -7,6 +8,7 @@ import pandas as pd
 import random
 import scipy.io as sio
 import tables as tb
+import time
 
 class DynamicRecArray(object):
     def __init__(self, dtype, size=10):
@@ -324,8 +326,10 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
             data_group = mask_file.root.data
             table = data_group.table
 
+            dtype = self.STRUCTURED_DTYPES['bbox']
             for row in table.iterrows():
                 masks_boxes[row['frame_num']] = {
+                    'mask': row['mask'].astype(np.uint8),
                     'box': np.array( # WTF
                         [[
                             tuple(np.array([[
@@ -340,9 +344,8 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
                             ]], dtype=np.uint32)
                             for idx, v in enumerate(row['box']))
                         ]],
-                        dtype=bbox_dtype
-                    )
-                    'mask': row['mask']
+                        dtype=dtype
+                    ),
                 }
 
         return masks_boxes
@@ -354,11 +357,11 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
         #
 
         df = pd.read_hdf(self.keypoint_file)
-        num_frames = df.shape[0]
+        num_frames = len(df.index)
 
         scorer = set(df.columns.get_level_values(0))
         assert len(scorer) == 1
-        scorer = scorer[0]
+        scorer = scorer.pop()
 
         keypoints = []
         for kp in df.columns.get_level_values(1):
@@ -367,31 +370,61 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
 
         # x, y, likelihood
         parameters = set(df.columns.get_level_values(2))
-        assert parameters == set('x', 'y', 'likelihood')
+        assert parameters == set(('x', 'y', 'likelihood'))
+
+        kp_data = []
+        for kp in keypoints:
+            X = np.around(df[scorer][kp]['x'].values).astype(np.uint16)
+            Y = np.around(df[scorer][kp]['y'].values).astype(np.uint16)
+            P = df[scorer][kp]['likelihood'].values >= 0.99
+
+            kp_data.append(np.array([X, Y, P]))
+
+        return np.array(kp_data).transpose()
 
         frame_data = {}
-        for frame_num in num_rows:
+        start = time.time()
+        for frame_num in range(num_frames):
+
             data = {
-                p: []
-                for p in parameters
+                'x': [],
+                'y': [],
+                'present': []
             }
+
             for kp in keypoints:
-                for p in parameters:
-                    data[p].append(
-                        round(df[scorer][kp][p])
-                        if p in ('x', 'y')
-                        else df[scorer][kp][p]
-                    )
+                data['x'].append(int(round(df[scorer][kp]['x'][frame_num])))
+                data['y'].append(int(round(df[scorer][kp]['y'][frame_num])))
+                data['present'].append(
+                    df[scorer][kp]['likelihood'][frame_num] >= 0.99
+                )
+                #for p in parameters:
+                #    data[p].append(
+                #        int(round(df[scorer][kp][p][frame_num]))
+                #        if p in ('x', 'y')
+                #        else df[scorer][kp][p][frame_num]
+                #    )
+            print('elapsed (1): {}'.format(time.time() - start))
 
             # reject frame instead of excluding keypoint?
-            data['present'] = [
-                l >= 0.99
-                for l in data['likelihood']
-            ]
+            #data['present'] = [
+            #    l >= 0.99
+            #    for l in data['likelihood']
+            #]
 
-            del data['likelihood']
-            frame_data[frame_num] = data
-            
+            frame_data[frame_num] = np.array(
+                [
+                    np.array(data['x']),
+                    np.array(data['y']),
+                    np.array(data['present'])
+                ],
+                dtype=np.uint16
+            )
+
+            del data
+            print('elapsed (2): {}'.format(time.time() - start))
+        print('elapsed (3): {}'.format(time.time() - start))
+
         return frame_data
 
 @click.command()
