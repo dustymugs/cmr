@@ -18,7 +18,7 @@ wget http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz
 tar xf CUB_200_2011.tgz
 ```
 
-2. Download our CUB annotation mat files and pre-computed SfM outputs (~30MB).  For structural details regarding these files, read [doc/files.md](files.md)
+2. Download the CUB Annotation and pre-computed SfM files (~30MB).  For structural details regarding these files, read [doc/files.md](files.md). For guidance on building your own Anotation files, read [doc/annotation.md](annotation.md)
 
 ```
 cd /cmr
