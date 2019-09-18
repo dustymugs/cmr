@@ -43,7 +43,7 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm)
             box_trans(b, :) = mean(kps_b(:, vis_b(1,:)>0), 2);
             kps_b = kps_b - box_trans(b, :)';
             kps_b_flipped = kps_b_flipped - mean(kps_b_flipped(:, vis_b_flipped(1,:)>0), 2);
-            
+
             kps_all = vertcat(kps_all, kps_b, kps_b_flipped);
 
             vis_all = vertcat(vis_all, vis_b, vis_b_flipped);
@@ -68,18 +68,17 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm)
         %% Align mean shape to canonical directions
         fprintf('Align mean shape to canonical directions\n')
         good_model = 0;
-        flip = 0;
+        S = diag([1 1 -1])*S; % preemptively flip
         while(~good_model)
             R = alignSfmModel(S, lr_edges, bf_edges, []);
             Srot = R*S;
             show3dModel(Srot, kp_names, 'convex_hull');
-            user_in = input('Is this model aligned ? "y" will save and "n" will realign after flipping: ','s');
+            user_in = input('Is this model aligned ? "y" will save and "n" will flip along the Z-axis: ','s');
             if(strcmp(user_in,'y'))
                 good_model = 1;
                 disp('Ok !')
             else
-                flip = mod(flip+1,2);
-                S = diag([1 1 -1])*S;        
+                S = diag([1 1 -1])*S;
             end
             close all;
         end
@@ -111,7 +110,7 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm)
             sfm_anno(bx).scale = scale*box_scale(bx);
             sfm_anno(bx).trans = trans'*box_scale(bx) + box_trans(bx,:)'*box_scale(bx);
         end
-        
+
         %% Compute and save convex hull
         fprintf('Compute convex hull\n')
         x = S(1, :)
