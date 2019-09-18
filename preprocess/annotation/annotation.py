@@ -16,14 +16,20 @@ class DynamicRecArray(object):
         self.length = 0
         self.size = size
         self._data = np.empty(self.size, dtype=self.dtype)
+        self._not_deleted = np.ones(self.size, dtype=bool)
 
     def __len__(self):
         return self.length
 
-    def append(self, rec):
+    def _resize(self):
+
         if self.length == self.size:
             self.size = int(1.5 * self.size)
             self._data = np.resize(self._data, self.size)
+            self._not_deleted = np.resize(self._not_deleted, self.size)
+
+    def append(self, rec):
+        self._resize()
         self._data[self.length] = rec
         self.length += 1
 
@@ -33,13 +39,11 @@ class DynamicRecArray(object):
 
     def delete(self, index):
 
-        self.length -= 1
-        self._data[index] = self._data[self.length]
-        self._data[self.length] = np.empty(1, dtype=self.dtype)
+        self._not_deleted[index] = False
 
     @property
     def data(self):
-        return self._data[:self.length]
+        return (self._data[self._not_deleted])[:self.length]
 
 class AnnotationManager(object):
 
@@ -127,6 +131,8 @@ class AnnotationManager(object):
 
         self.annotation_file = annotation_file
         self.annotation_data = None
+        self._images = None
+        self._rel_path_lookup = {}
 
         self.mask_file = mask_file
         self.keypoint_file = keypoint_file
@@ -254,29 +260,46 @@ class AnnotationManager(object):
 
     def _load_annotation_data_structure(self):
 
-        self._rel_path_lookup = {}
-
-        # we intentionally exclude everything not required for CMR to run
         dtype = self.STRUCTURED_DTYPES['images']
         self._images = DynamicRecArray(dtype, size=100)
+
+        # we intentionally exclude everything not required for CMR to run
         if self.annotation_data is not None:
             images = self.annotation_data['images'][0]
             for record in images:
-                self._images.extend(
-                    np.array(
-                        [tuple(
-                            record[name]
-                            for name in dtype.names
-                        )],
-                        dtype=dtype
-                    )
+                row = np.array(
+                    [tuple(
+                        record[name]
+                        for name in dtype.names
+                    )],
+                    dtype=dtype
                 )
+                self._add_to_images(row)
 
-                rel_path_indices = self._rel_path_lookup.setdefault(
-                    record['rel_path'].item(),
-                    []
-                )
-                rel_path_indices.append(self._images.length - 1)
+    def _delete_from_lookup(self, rel_path):
+
+        self._rel_path_lookup[rel_path] = []
+
+    def _find_in_lookup(self, rel_path):
+
+        return self._rel_path_lookup.get(rel_path, [])
+
+    def _delete_from_images(self, rel_path):
+
+        for index in self._find_in_lookup(rel_path):
+            self._images.delete(index)
+
+    def _add_to_lookup(self, rel_path, index):
+
+        self._rel_path_lookup = self._rel_path_lookup or {}
+
+        rel_path_indices = self._rel_path_lookup.setdefault(rel_path, [])
+        rel_path_indices.append(index)
+
+    def _add_to_images(self, row):
+
+        self._images.extend(row)
+        self._add_to_lookup(row['rel_path'][0].item(), self._images.length - 1)
 
     def _save_annotation_data_structure(self):
 
@@ -299,49 +322,47 @@ class AnnotationManager(object):
         the_file = self.video_file or self.image_file
 
         '''
-ipdb> self._images.data[0]['rel_path']                                                       
-array(['001.Black_footed_Albatross/Black_Footed_Albatross_0085_92.jpg'],
-      dtype='<U61')
-ipdb> self._images.data[0]['mask']                                                           
-array([[0, 0, 0, ..., 0, 0, 0],
+ipdb> row                                                                                    
+array([(array(['001.Black_footed_Albatross/Black_Footed_Albatross_0085_92.jpg'],
+      dtype='<U61'), array([[(array([[33]], dtype=int32), array([[53]], dtype=int32), array([[283]], dtype=int32), array([[447]], dtype=int32))]],
+      dtype=[('x1', 'O'), ('y1', 'O'), ('x2', 'O'), ('y2', 'O')]), array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
+         82, 228],
+       [180, 202,   0, 213, 181, 187,   0, 190, 108, 181, 189, 226, 267,
+        199, 204],
+       [  1,   1,   0,   1,   1,   1,   0,   1,   1,   1,   1,   1,   1,
+          1,   1]], dtype=uint16), array([[0, 0, 0, ..., 0, 0, 0],
        [0, 0, 0, ..., 0, 0, 0],
        [0, 0, 0, ..., 0, 0, 0],
        ...,
        [0, 0, 0, ..., 0, 0, 0],
        [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0]], dtype=uint8)
-ipdb> self._images.data[0]['bbox']                                                           
-array([[(array([[33]], dtype=int32), array([[53]], dtype=int32), array([[283]], dtype=int32), array([[447]], dtype=int32))]],
-      dtype=[('x1', 'O'), ('y1', 'O'), ('x2', 'O'), ('y2', 'O')])
-ipdb> self._images.data[0]['parts']                                                          
-array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
-         82, 228],
-       [180, 202,   0, 213, 181, 187,   0, 190, 108, 181, 189, 226, 267,
-        199, 204],
-       [  1,   1,   0,   1,   1,   1,   0,   1,   1,   1,   1,   1,   1,
-          1,   1]], dtype=uint16)
-       '''
+       [0, 0, 0, ..., 0, 0, 0]], dtype=uint8))],
+      dtype=[('rel_path', 'O'), ('bbox', 'O'), ('parts', 'O'), ('mask', 'O')])
+        '''
 
         parts = self._load_keypoint_data()
         masks_boxes = self._load_masks_boxes()
 
-        import ipdb;ipdb.set_trace()
-        # TODO: delete any reference to the_file
+        # delete any reference to the_file
+        self._delete_from_images(the_file)
 
         # add rows to self._images
         dtype = self.STRUCTURED_DTYPES['images']
         for frame_num, mask_box in masks_boxes.items():
 
+            if frame_num not in parts:
+                continue
+
             row = np.array(
                 [(
-                    the_file,
+                    np.array([the_file]),
                     mask_box['box'],
                     parts[frame_num],
                     mask_box['mask'],
                 )],
                 dtype=dtype
             )
-            self._images.extend(row)
+            self._add_to_images(row)
 
         self._save_annotation_data_structure()
         self._save_annotation_data()
@@ -391,6 +412,7 @@ array([[163, 264,   0, 190, 240, 253,   0,  57, 193, 221, 244,  78, 126,
         for kp in df.columns.get_level_values(1):
             if kp not in keypoints:
                 keypoints.append(kp)
+        #print('keypoints:', keypoints)
 
         # x, y, likelihood
         parameters = set(df.columns.get_level_values(2))
