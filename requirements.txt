@@ -15,3 +15,4 @@ visdom
 neural-renderer-pytorch
 git+https://github.com/dustymugs/PerceptualSimilarity.git
 ipdb
+click
