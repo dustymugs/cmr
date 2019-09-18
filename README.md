@@ -22,6 +22,12 @@ In ECCV, 2018
 [Paper](https://arxiv.org/pdf/1803.07549.pdf)
 ![Teaser Image](https://akanazawa.github.io/cmr/resources/images/teaser.png)
 
+### Clone this Repo
+
+```
+git clone https://github.com/dustymugs/cmr.git /PATH/TO/cmr
+```
+
 ### Docker
 
 Use the Docker image provided as it contains:
@@ -36,6 +42,8 @@ docker pull dustymugs/cmr
 ```
 
 #### Start Docker Container
+
+We keep the CMR repo outside of the Docker container and make it available instead. All examples in this repo assume you following the same pattern
 
 ```
 cd /cmr
