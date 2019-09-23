@@ -1,4 +1,4 @@
-function mean_shape(project_dir, split_name, kp_names, kp_perm)
+function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edges, tb_edges)
 
     fprintf('Computing mean shape: %s\n', split_name)
 
@@ -17,9 +17,6 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm)
         kps_all = [];
         vis_all = [];
         box_scale = [];
-
-        lr_edges = [8 12; 9 13]; %left to right edges (along -X)
-        bf_edges = [14 5]; % back to front edges (along -Y)
 
         %% Construct keypoint matrix
         fprintf('Construct keypoint matrix\n')
@@ -68,9 +65,9 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm)
         %% Align mean shape to canonical directions
         fprintf('Align mean shape to canonical directions\n')
         good_model = 0;
-        S = diag([1 1 -1])*S; % preemptively flip
+        %S = diag([1 1 -1])*S; % preemptively flip
         while(~good_model)
-            R = alignSfmModel(S, lr_edges, bf_edges, []);
+            R = alignSfmModel(S, lr_edges, bf_edges, tb_edges);
             Srot = R*S;
             show3dModel(Srot, kp_names, 'convex_hull');
             user_in = input('Is this model aligned ? "y" will save and "n" will flip along the Z-axis: ','s');
