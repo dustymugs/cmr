@@ -255,6 +255,8 @@ class AnnotationManager(object):
                     'Shape for "parts" must be: (3, x) where x equals the number of keypoints'
             assert row['parts'] is not None, \
                 'Value missing for "parts"'
+            assert row['parts'].dtype.kind == 'f', \
+                'Datatype for "parts" must be floating point'
 
         print('No issues found: {}'.format(self.annotation_file))
 
@@ -321,7 +323,7 @@ class AnnotationManager(object):
 
         the_file = self.video_file or self.image_file
 
-        parts = self._load_keypoint_data()
+        keypoints, parts = self._load_keypoint_data()
         masks_boxes = self._load_masks_boxes()
 
         # delete any reference to the_file
@@ -329,16 +331,19 @@ class AnnotationManager(object):
 
         # add rows to self._images
         dtype = self.STRUCTURED_DTYPES['images']
+        num_keypoints = len(keypoints)
         for frame_num, mask_box in masks_boxes.items():
 
-            if frame_num not in parts:
+            frame_parts = parts[frame_num]
+            # make sure some keypoint is usable
+            if np.count_nonzero(frame_parts[2, :]) / num_keypoints < 0.4:
                 continue
 
             row = np.array(
                 [(
                     np.array([the_file]),
                     mask_box['box'],
-                    parts[frame_num],
+                    frame_parts,
                     mask_box['mask'],
                 )],
                 dtype=dtype
@@ -401,13 +406,19 @@ class AnnotationManager(object):
 
         kp_data = []
         for kp in keypoints:
-            X = np.around(df[scorer][kp]['x'].values).astype(np.uint16)
-            Y = np.around(df[scorer][kp]['y'].values).astype(np.uint16)
-            P = df[scorer][kp]['likelihood'].values >= 0.99
+            #X = np.around(df[scorer][kp]['x'].values).astype(np.uint16)
+            #Y = np.around(df[scorer][kp]['y'].values).astype(np.uint16)
+            X = df[scorer][kp]['x'].values
+            Y = df[scorer][kp]['y'].values
+
+            X[X < 0.] = 0.
+            Y[Y < 0.] = 0.
+
+            P = (df[scorer][kp]['likelihood'].values >= 0.99)
 
             kp_data.append(np.array([X, Y, P]))
 
-        return np.array(kp_data).transpose()
+        return keypoints, np.array(kp_data).transpose()
 
 @click.command()
 @click.argument('action', type=click.Choice(('update', 'verify')))
@@ -422,12 +433,11 @@ def do_it(action, annotation, mask, keypoint, video, image):
     consumption by CMR
     '''
 
-    assert (
-        (action == 'update') and (
+    if action == 'update':
+        assert (
             (video is None and image is not None) or
             (video is not None and image is None)
-        )
-    ), '--video and --image are mutually exclusive. Only one can be provided at one time'
+        ), '--video and --image are mutually exclusive. Only one can be provided at one time'
 
     mgr = AnnotationManager(
         annotation_file=annotation,

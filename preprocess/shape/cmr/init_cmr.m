@@ -6,10 +6,10 @@ function init_cmr()
     addpath(fullfile(this_path, '..', 'quaternions'));
 
     if (exist('OCTAVE_VERSION', 'builtin') ~= 0)
-        graphics_toolkit('gnuplot')
-        setenv('GNUTERM', 'x11')
+        graphics_toolkit('gnuplot');
+        setenv('GNUTERM', 'x11');
 
-        %debug_on_warning(1);
+        debug_on_warning(1);
         debug_on_error(1);
 
         page_output_immediately(1);
