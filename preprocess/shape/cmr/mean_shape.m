@@ -20,15 +20,16 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
 
         %% Construct keypoint matrix
         fprintf('Construct keypoint matrix\n')
-        n_images = length(var.images);
-        box_trans = zeros(n_images, 2);
-        fprintf('Processing images')
-        for b = 1:n_images
+        n_objects = length(var.images);
+        box_trans = zeros(n_objects, 2);
+        fprintf('Processing objects')
+        for b = 1:n_objects
             % bbox to normalize
             bbox_h = var.images(b).bbox.y2 - var.images(b).bbox.y1 + 1;
             bbox_w = var.images(b).bbox.x2 - var.images(b).bbox.x1 + 1;
             box_scale(b) = max(bbox_w, bbox_h);
             kps_b = var.images(b).parts(1:2, :)/box_scale(b);
+
             % Add flipped data
             kps_b_flipped = kps_b(:, kp_perm);
             kps_b_flipped(1, :) = -kps_b_flipped(1, :);
@@ -37,18 +38,22 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
             vis_b_flipped = vis_b(:, kp_perm);
 
             % Mean center here,,
+            % keyboard;
             box_trans(b, :) = mean(kps_b(:, vis_b(1,:)>0), 2);
+            box_trans_flipped = mean(kps_b_flipped(:, vis_b_flipped(1,:)>0), 2);
+
             kps_b = kps_b - box_trans(b, :)';
-            kps_b_flipped = kps_b_flipped - mean(kps_b_flipped(:, vis_b_flipped(1,:)>0), 2);
+            kps_b_flipped = kps_b_flipped - box_trans_flipped;
 
             kps_all = vertcat(kps_all, kps_b, kps_b_flipped);
-
             vis_all = vertcat(vis_all, vis_b, vis_b_flipped);
+
             % keyboard
             % sfigure(2); clf;
             % scatter(kps_b(1,:), kps_b(2,:));
             % hold on;
             % scatter(kps_b_flipped(1,:), kps_b_flipped(2,:));
+
             if (mod(b, 100) == 0)
                 fprintf('.')
             end
@@ -87,9 +92,9 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
         [M,T,~] = sfmFactorizationKnownShape(kps_all, S, 50);
 
         %%
-        fprintf('SfM of each image as transformation from mean shape\n')
+        fprintf('SfM of each object as transformation from mean shape\n')
         sfm_anno = struct;
-        for bx = 1:n_images
+        for bx = 1:n_objects
             b = 2*bx-1;
             motion = M([2*b-1, 2*b], :);
             scale = norm(motion(1,:));
@@ -102,6 +107,7 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
             % reproj2 = rot * S;
             % reproj2 = scale * (reproj2(1:2, :)) + T([2*b-1, 2*b], :);
             % norm(reproj - reproj2);
+
             [scale, rot, trans] = reprojMinimize(kps_all([2*b-1, 2*b], :), S, scale, rot, T([2*b-1, 2*b], :));
             sfm_anno(bx).rot = rot;
             sfm_anno(bx).scale = scale*box_scale(bx);
