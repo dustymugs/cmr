@@ -1,5 +1,5 @@
 """
-Script for the cow shape, pose and texture experiment.
+Script for the bird shape, pose and texture experiment.
 
 The model takes imgs, outputs the deformation to the mesh & camera parameters
 Loss consists of:
@@ -8,31 +8,33 @@ Loss consists of:
 - smoothness/laplacian priors on triangles
 - texture reprojection losses
 
-example usage : python -m cmr.experiments.cow --name=cow --plot_scalars --save_epoch_freq=100 --batch_size=8 --display_visuals --display_freq=2000
+example usage : python -m cmr.experiments.shape --name=bird_shape --plot_scalars --save_epoch_freq=1 --batch_size=8 --display_visuals --display_freq=2000
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from absl import app
+from absl import flags
 
-from absl import app, flags
-from collections import OrderedDict
-import numpy as np
 import os.path as osp
-import scipy.io as sio
+import numpy as np
 import torch
 import torchvision
+import scipy.io as sio
+from collections import OrderedDict
 
+from ..data import cub as cub_data
 from ..utils import visutil
-# TODO: bird_vis rename to shape_vis
-from ..utils import bird_vis as shape_vis
+from ..utils import bird_vis
 from ..utils import image as image_utils
-from ..nnutils import geom_utils
+from ..nnutils import train_utils
 from ..nnutils import loss_utils
 from ..nnutils import mesh_net
-from ..nnutils import train_utils
 from ..nnutils.nmr import NeuralRenderer
+from ..nnutils import geom_utils
 
+flags.DEFINE_string('dataset', 'cub', 'cub or pascal or p3d')
 # Weights:
 flags.DEFINE_float('kp_loss_wt', 30., 'keypoint loss weight')
 flags.DEFINE_float('mask_loss_wt', 2., 'mask loss weight')
@@ -47,14 +49,10 @@ flags.DEFINE_boolean('include_weighted', False, 'if True, include weighted loss 
 
 opts = flags.FLAGS
 
+curr_path = osp.dirname(osp.abspath(__file__))
+cache_path = osp.join(curr_path, '..', 'cachedir')
+
 class ShapeTrainer(train_utils.Trainer):
-
-    DATA_MODULE = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.data_module = self.__class__.DATA_MODULE
-
     def define_model(self):
         opts = self.opts
 
@@ -62,36 +60,16 @@ class ShapeTrainer(train_utils.Trainer):
         # Options
         # ----------
         self.symmetric = opts.symmetric
-        anno_sfm_path = osp.join(
-            opts.cache_dir,
-            'sfm',
-            'anno_train.mat'
-        )
-        anno_sfm = sio.loadmat(
-            anno_sfm_path,
-            struct_as_record=False,
-            squeeze_me=True
-        )
-        sfm_mean_shape = (
-            np.transpose(anno_sfm['S']),
-            anno_sfm['conv_tri'] - 1
-        )
+        anno_sfm_path = osp.join(opts.cub_cache_dir, 'sfm', 'anno_train.mat')
+        anno_sfm = sio.loadmat(anno_sfm_path, struct_as_record=False, squeeze_me=True)
+        sfm_mean_shape = (np.transpose(anno_sfm['S']), anno_sfm['conv_tri']-1)
 
         img_size = (opts.img_size, opts.img_size)
         self.model = mesh_net.MeshNet(
-            img_size,
-            opts,
-            nz_feat=opts.nz_feat,
-            num_kps=opts.num_kps,
-            sfm_mean_shape=sfm_mean_shape
-        )
+            img_size, opts, nz_feat=opts.nz_feat, num_kps=opts.num_kps, sfm_mean_shape=sfm_mean_shape)
 
-        if opts.num_pretrain_eCowpochs > 0:
-            self.load_network(
-                self.model,
-                'pred',
-                opts.num_pretrain_epochs
-            )
+        if opts.num_pretrain_epochs > 0:
+            self.load_network(self.model, 'pred', opts.num_pretrain_epochs)
 
         self.model = self.model.cuda(device=opts.gpu_id)
 
@@ -106,35 +84,29 @@ class ShapeTrainer(train_utils.Trainer):
         faces = self.model.faces.view(1, -1, 3)
         self.faces = faces.repeat(opts.batch_size, 1, 1)
 
-        self.renderer = NeuralRenderer(
-            opts.img_size,
-            cuda_device=opts.gpu_id
-        )
-        # for camera loss via projection
-        #self.renderer_predcam = NeuralRenderer(
-        #    opts.img_size,
-        #    cuda_device=opts.gpu_id
-        #)
+        self.renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
+        #self.renderer_predcam = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id) #for camera loss via projection
 
         # Need separate NMR for each fwd/bwd call.
         if opts.texture:
-            self.tex_renderer = NeuralRenderer(
-                opts.img_size,
-                cuda_device=opts.gpu_id
-            )
+            self.tex_renderer = NeuralRenderer(opts.img_size, cuda_device=opts.gpu_id)
             # Only use ambient light for tex renderer
             self.tex_renderer.ambient_light_only()
 
         # For visualization
-        self.vis_rend = shape_vis.VisRenderer(opts.img_size, faces.data.cpu().numpy())
+        self.vis_rend = bird_vis.VisRenderer(opts.img_size, faces.data.cpu().numpy())
 
     def init_dataset(self):
+        opts = self.opts
+        if opts.dataset == 'cub':
+            self.data_module = cub_data
+        else:
+            print('Unknown dataset %d!' % opts.dataset)
 
-        self.dataloader = self.data_module.data_loader(self.opts)
+        self.dataloader = self.data_module.data_loader(opts)
         self.resnet_transform = torchvision.transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+            std=[0.229, 0.224, 0.225])
 
     def define_criterion(self):
         self.projection_loss = loss_utils.kp_l2_loss
@@ -275,9 +247,9 @@ class ShapeTrainer(train_utils.Trainer):
         show_uv_flows = []
 
         for i in range(num_show):
-            input_img = shape_vis.kp2im(self.kps[i].data, self.imgs[i].data)
-            pred_kp_img = shape_vis.kp2im(self.kp_pred[i].data, self.imgs[i].data)
-            masks = shape_vis.tensor2mask(mask_concat[i].data)
+            input_img = bird_vis.kp2im(self.kps[i].data, self.imgs[i].data)
+            pred_kp_img = bird_vis.kp2im(self.kp_pred[i].data, self.imgs[i].data)
+            masks = bird_vis.tensor2mask(mask_concat[i].data)
             if self.opts.texture:
                 texture_here = self.textures[i]
             else:
@@ -290,12 +262,12 @@ class ShapeTrainer(train_utils.Trainer):
             diff_rends = np.hstack((rend_frontal, rend_top))
 
             if self.opts.texture:
-                uv_img = shape_vis.tensor2im(uv_images[i].data)
+                uv_img = bird_vis.tensor2im(uv_images[i].data)
                 show_uv_imgs.append(uv_img)
-                uv_flow = shape_vis.visflow(uv_flows[i].data)
+                uv_flow = bird_vis.visflow(uv_flows[i].data)
                 show_uv_flows.append(uv_flow)
 
-                tex_img = shape_vis.tensor2im(self.texture_pred[i].data)
+                tex_img = bird_vis.tensor2im(self.texture_pred[i].data)
                 imgs = np.hstack((input_img, pred_kp_img, tex_img))
             else:
                 imgs = np.hstack((input_img, pred_kp_img))
@@ -303,7 +275,7 @@ class ShapeTrainer(train_utils.Trainer):
             rend_gtcam = self.vis_rend(self.pred_v[i], self.cams[i], texture=texture_here)
             rends = np.hstack((diff_rends, rend_predcam, rend_gtcam))
             vis_dict['%d' % i] = np.hstack((imgs, rends, masks))
-            vis_dict['masked_img %d' % i] = shape_vis.tensor2im((self.imgs[i] * self.masks[i]).data)
+            vis_dict['masked_img %d' % i] = bird_vis.tensor2im((self.imgs[i] * self.masks[i]).data)
 
         if self.opts.texture:
             vis_dict['uv_images'] = np.hstack(show_uv_imgs)
@@ -350,14 +322,11 @@ class ShapeTrainer(train_utils.Trainer):
         return sc_dict
 
 
-#
-# Example of making script executable for your Shape trainer
-# 
-#def main(_):
-#    torch.manual_seed(0)
-#    trainer = ShapeTrainer(opts)
-#    trainer.init_training()
-#    trainer.train()
-#
-#if __name__ == '__main__':
-#    app.run(main)
+def main(_):
+    torch.manual_seed(0)
+    trainer = ShapeTrainer(opts)
+    trainer.init_training()
+    trainer.train()
+
+if __name__ == '__main__':
+    app.run(main)

@@ -29,6 +29,18 @@ from torch.utils.data.dataloader import default_collate
 from ..utils import image as image_utils
 from ..utils import transformations
 
+__all__ = [
+   'BaseDataset',
+   'base_loader'
+]
+
+# -------------- flags ------------- #
+# ---------------------------------- #
+    
+# directory containing the "images" directory
+flags.DEFINE_string('data_dir', None, 'Data Directory')
+# directory containg the "data" and "sfm" directories
+flags.DEFINE_string('cache_dir', None, 'Cache Directory')
 
 flags.DEFINE_integer('img_size', 256, 'image size')
 
@@ -45,9 +57,11 @@ flags.DEFINE_integer('n_data_workers', 4, 'Number of data loading workers')
 
 # -------------- Dataset ------------- #
 # ------------------------------------ #
-class BaseDataset(Dataset):
+class _BaseDataset(Dataset):
     ''' 
     img, mask, kp, pose data loader
+
+    DO NOT INHERIT FROM THIS!!! USE BaseDataset BELOW!!!
     '''
 
     def __init__(self, opts, filter_key=None):
@@ -178,6 +192,14 @@ class BaseDataset(Dataset):
         else:
             return img, mask, kp, sfm_pose
 
+    @property
+    def kp_perm(self):
+        return getattr(self, '_kp_perm', np.array([]))
+
+    @kp_perm.setter
+    def kp_perm(self, new_values):
+        self._kp_perm = new_values
+
     def __len__(self):
         return self.num_imgs
 
@@ -194,9 +216,8 @@ class BaseDataset(Dataset):
         }
 
         if self.filter_key is not None:
-            if self.filter_key not in elem.keys():
-                print('Bad filter key %s' % self.filter_key)
-                import ipdb; ipdb.set_trace()
+            assert self.filter_key in elem.keys(), \
+                'Bad filter key {}'.format(self.filter_key)
             if self.filter_key == 'sfm_pose':
                 # Return both vis and sfm_pose
                 vis = elem['kp'][:, 2]
@@ -209,6 +230,49 @@ class BaseDataset(Dataset):
 
         return elem
 
+class BaseDataset(_BaseDataset):
+    '''
+    Generic Data loader
+    '''
+
+    def __init__(self, opts, filter_key=None):
+        super().__init__(opts, filter_key=filter_key)
+        self.filter_key = filter_key
+
+        self.data_dir = opts.data_dir
+        self.data_cache_dir = opts.cache_dir
+
+        self.img_dir = osp.join(self.data_dir, 'images')
+        self.anno_path = osp.join(
+            self.data_cache_dir,
+            'data',
+            '{}_cleaned.mat'.format(opts.split)
+        )
+        self.anno_sfm_path = osp.join(
+            self.data_cache_dir,
+            'sfm',
+            'anno_{}.mat'.format(opts.split)
+        )
+
+        assert osp.exists(self.anno_path), \
+            '%s not found'.format(self.anno_path)
+
+        # Load the annotation file.
+        print('Loading %s' % self.anno_path)
+        self.anno = sio.loadmat(
+            self.anno_path,
+            struct_as_record=False,
+            squeeze_me=True
+        )['images']
+        self.anno_sfm = sio.loadmat(
+            self.anno_sfm_path,
+            struct_as_record=False,
+            squeeze_me=True
+        )['sfm_anno']
+
+        self.num_imgs = len(self.anno)
+        print('%d images' % self.num_imgs)
+
 # ------------ Data Loader ----------- #
 # ------------------------------------ #
 def base_loader(d_set_func, batch_size, opts, filter_key=None, shuffle=True):
@@ -218,4 +282,5 @@ def base_loader(d_set_func, batch_size, opts, filter_key=None, shuffle=True):
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=opts.n_data_workers,
-        drop_last=True)
+        drop_last=True
+    )
