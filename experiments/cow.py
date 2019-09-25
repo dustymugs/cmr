@@ -12,12 +12,14 @@ example usage : python -m cmr.experiments.cow --name=cow --plot_scalars --save_e
 """
 
 from __future__ import absolute_import
-from absl import app
 
+from absl import app, flags
 import torch
 
 from .shape import ShapeTrainer
 from ..data import cow as cow_data
+
+opts = flags.FLAGS
 
 class CowTrainer(ShapeTrainer):
 

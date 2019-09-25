@@ -1,11 +1,16 @@
 import click
 from contextlib import closing
+import cv2
 import copy
 import math
+import matplotlib as mpl
 import numpy as np
 import os
+import os.path as osp
 import pandas as pd
+from PIL import Image
 import random
+import re
 import scipy.io as sio
 import tables as tb
 import time
@@ -47,6 +52,9 @@ class DynamicRecArray(object):
 
 class AnnotationManager(object):
 
+    FRAME_FILE_NAME = 'frame_{0:05d}.jpg'
+    FRAME_FILE_REGEX = '.*/{}/frame_\d{{5}}\.jpg$'
+
     STRUCTURED_DTYPES = {
         'images': np.dtype([
             ('rel_path', 'O'),
@@ -69,15 +77,18 @@ class AnnotationManager(object):
     def _set_attribute(self, kw, value):
         setattr(self, kw, value)
 
-    def _set_file_attribute(
+    def _set_path_attribute(
         self,
         kw, new_value,
+        type_='file',
         allow_none=False, allow_not_exist=False
     ):
         if not allow_none:
             assert new_value is not None
-        elif new_value is not None and not allow_not_exist:
-            assert os.path.isfile(new_value)
+        if new_value is not None and not allow_not_exist:
+            is_type = getattr(osp, 'is{}'.format(type_))
+            assert is_type(new_value)
+
         self._set_attribute(kw, new_value)
 
     @property
@@ -86,7 +97,7 @@ class AnnotationManager(object):
 
     @annotation_file.setter
     def annotation_file(self, new_value):
-        self._set_file_attribute('_annotation_file', new_value, allow_not_exist=True)
+        self._set_path_attribute('_annotation_file', new_value, allow_not_exist=True)
 
     @property
     def mask_file(self):
@@ -94,7 +105,7 @@ class AnnotationManager(object):
 
     @mask_file.setter
     def mask_file(self, new_value):
-        self._set_file_attribute('_mask_file', new_value, allow_none=True)
+        self._set_path_attribute('_mask_file', new_value, allow_none=True)
 
     @property
     def keypoint_file(self):
@@ -102,7 +113,7 @@ class AnnotationManager(object):
 
     @keypoint_file.setter
     def keypoint_file(self, new_value):
-        self._set_file_attribute('_keypoint_file', new_value, allow_none=True)
+        self._set_path_attribute('_keypoint_file', new_value, allow_none=True)
 
     @property
     def video_file(self):
@@ -110,7 +121,7 @@ class AnnotationManager(object):
 
     @video_file.setter
     def video_file(self, new_value):
-        self._set_file_attribute('_video_file', new_value, allow_none=True)
+        self._set_path_attribute('_video_file', new_value, allow_none=True)
 
     @property
     def image_file(self):
@@ -118,7 +129,23 @@ class AnnotationManager(object):
 
     @image_file.setter
     def image_file(self, new_value):
-        self._set_file_attribute('_image_file', new_value, allow_none=True)
+        self._set_path_attribute('_image_file', new_value, allow_none=True)
+
+    @property
+    def frame_dir(self):
+        return self._get_attribute('_frame_dir')
+
+    @frame_dir.setter
+    def frame_dir(self, new_value):
+        self._set_path_attribute('_frame_dir', new_value, type_='dir', allow_none=True)
+
+    @property
+    def ignore_file(self):
+        return self._get_attribute('_ignore_file')
+
+    @ignore_file.setter
+    def ignore_file(self, new_value):
+        self._set_path_attribute('_ignore_file', new_value, allow_none=True)
 
     def __init__(
         self,
@@ -126,7 +153,9 @@ class AnnotationManager(object):
         mask_file=None,
         keypoint_file=None,
         video_file=None,
-        image_file=None
+        image_file=None,
+        frame_dir=None,
+        ignore_file=None,
     ):
 
         self.annotation_file = annotation_file
@@ -138,6 +167,8 @@ class AnnotationManager(object):
         self.keypoint_file = keypoint_file
         self.video_file = video_file
         self.image_file = image_file
+        self.frame_dir = frame_dir
+        self.ignore_file = ignore_file
 
     def _load_annotation_data(self, raise_error=True):
 
@@ -282,14 +313,40 @@ class AnnotationManager(object):
 
         self._rel_path_lookup[rel_path] = []
 
-    def _find_in_lookup(self, rel_path):
+    def _find_in_lookup(self, rel_path, regex_pattern=None):
 
-        return self._rel_path_lookup.get(rel_path, [])
+        if regex_pattern is None:
+
+            return self._rel_path_lookup.get(rel_path, [])
+
+        else:
+
+            return {
+                k: v
+                for k, v in self._rel_path_lookup.items()
+                if re.match(regex_pattern, k)
+            }
 
     def _delete_from_images(self, rel_path):
 
-        for index in self._find_in_lookup(rel_path):
-            self._images.delete(index)
+        # videos require deleting anything in the directory of same name
+        if rel_path == self.video_file:
+
+            dir_name = osp.splitext(osp.basename(rel_path))[0]
+
+            # delete paths that end with: .../<dir_name>/frame_XXXXX.png
+            reo = re.compile(self.FRAME_FILE_REGEX.format(dir_name))
+
+            for frame_path, indexes in self._find_in_lookup(rel_path, reo).items():
+                for index in indexes:
+                    self._images.delete(index)
+                self._delete_from_lookup(frame_path)
+
+        else:
+        
+            for index in self._find_in_lookup(rel_path):
+                self._images.delete(index)
+            self._delete_from_lookup(rel_path)
 
     def _add_to_lookup(self, rel_path, index):
 
@@ -309,6 +366,99 @@ class AnnotationManager(object):
             'images': self._images.data
         }
 
+    def _extract_frames(self):
+
+        assert self.video_file is not None
+        assert self.frame_dir is not None
+
+        frames_path = osp.abspath(
+            osp.join(
+                self.frame_dir,
+                osp.splitext(osp.basename(self.video_file))[0]
+            )
+        )
+
+        os.makedirs(frames_path, exist_ok=True)
+
+        src = cv2.VideoCapture(self.video_file)
+        width = int(src.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(src.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        frame = 0
+        success, image = src.read()
+        while success:
+
+            frame_path = osp.join(
+                frames_path,
+                self.FRAME_FILE_NAME.format(frame)
+            )
+
+            # OpenCV returns images as BGR, convert to RGB
+            im = image[..., ::-1]
+            im = Image.fromarray(im)
+
+            im.save(frame_path, optimize=True)
+
+            success, image = src.read()
+            frame += 1
+
+        return frames_path
+
+    def _in_ignore_file(self, frame_num):
+
+        if not hasattr(self, '_ignore_file_list'):
+
+            self._ignore_file_list = []
+            if self.ignore_file is not None:
+
+                with open(self.ignore_file, 'rb') as fh:
+                    items = [
+                        l.decode()
+                        for l in fh.read().splitlines()
+                    ]
+
+                    for item in items:
+
+                        if len(item.strip()) < 1:
+                            continue
+
+                        parts = item.split('-')
+                        num_parts = len(parts)
+                        if num_parts == 1:
+                            self._ignore_file_list.append(int(parts[0]))
+                        elif num_parts == 2:
+                            self._ignore_file_list.extend(
+                                range(int(parts[0]), int(parts[-1]) + 1)
+                            )
+
+        return frame_num in self._ignore_file_list
+
+    def _ignore_frame(self, frame_num, frame_path):
+        '''
+        Return True to ignore frame
+        '''
+
+        if self._in_ignore_file(frame_num):
+            return True
+
+        im = Image.open(frame_path)
+
+        # rescale for speed
+        im.thumbnail((128, 128))
+        ima = np.asarray(im)
+
+        # reorg
+        nrgb = ima / 255.
+        nhsv = mpl.colors.rgb_to_hsv(nrgb)
+        nhsv = np.moveaxis(nhsv, -1, 0)
+
+        # too dark
+        values = nhsv[2] # v of hsv
+        if np.mean(values) + np.std(values) < 0.5:
+            return True
+
+        return False
+
     def update(self):
 
         assert self.video_file is not None or self.image_file is not None, \
@@ -322,6 +472,7 @@ class AnnotationManager(object):
         self._load_annotation_data_structure()
 
         the_file = self.video_file or self.image_file
+        the_full_file = osp.abspath(the_file)
 
         keypoints, parts = self._load_keypoint_data()
         masks_boxes = self._load_masks_boxes()
@@ -329,19 +480,35 @@ class AnnotationManager(object):
         # delete any reference to the_file
         self._delete_from_images(the_file)
 
+        # if video, extract frames
+        frames_path = None
+        if (the_file == self.video_file):
+            frames_path = self._extract_frames()
+
         # add rows to self._images
         dtype = self.STRUCTURED_DTYPES['images']
         num_keypoints = len(keypoints)
         for frame_num, mask_box in masks_boxes.items():
 
             frame_parts = parts[frame_num]
-            # make sure some keypoint is usable
-            if np.count_nonzero(frame_parts[2, :]) / num_keypoints < 0.4:
+            # make sure most keypoints are usable
+            if np.count_nonzero(frame_parts[2, :]) / num_keypoints < 0.7:
+                continue
+
+            if frames_path:
+                rel_path = osp.join(
+                    frames_path,
+                    self.FRAME_FILE_NAME.format(frame_num)
+                )
+            else:
+                rel_path = the_full_file
+
+            if self._ignore_frame(frame_num, rel_path):
                 continue
 
             row = np.array(
                 [(
-                    np.array([the_file]),
+                    np.array([rel_path]), # we store absolute paths
                     mask_box['box'],
                     frame_parts,
                     mask_box['mask'],
@@ -427,7 +594,9 @@ class AnnotationManager(object):
 @click.option('--keypoint', '-k', type=click.Path(), help='Keypoint file of the Video or Image file')
 @click.option('--video', '-v', type=click.Path(), help='Video file to be added/updated. Frames will be extracted and placed next to the video file')
 @click.option('--image', '-i', type=click.Path(), help='Image file to be added/updated')
-def do_it(action, annotation, mask, keypoint, video, image):
+@click.option('--frame-dir', type=click.Path(), help='Existing directory in which vidoe frames will be placed')
+@click.option('--ignore', type=click.Path(), help='Ignore file with list of frame numbers (0-based) to exclude')
+def do_it(action, annotation, mask, keypoint, video, image, frame_dir, ignore):
     '''
     Utility to update and verify the provided <ANNOTATION> MatLab file for
     consumption by CMR
@@ -438,13 +607,18 @@ def do_it(action, annotation, mask, keypoint, video, image):
             (video is None and image is not None) or
             (video is not None and image is None)
         ), '--video and --image are mutually exclusive. Only one can be provided at one time'
+        if video is not None:
+            assert frame_dir is not None, \
+                '--frame-dir is required if --video is provided'
 
     mgr = AnnotationManager(
         annotation_file=annotation,
         mask_file=mask,
         keypoint_file=keypoint,
         video_file=video,
-        image_file=image
+        image_file=image,
+        frame_dir=frame_dir,
+        ignore_file=ignore,
     )
 
     fn = getattr(mgr, action)

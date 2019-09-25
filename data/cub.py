@@ -42,7 +42,7 @@ opts = flags.FLAGS
 
 # -------------- Dataset ------------- #
 # ------------------------------------ #
-class CUBDataset(base_data.BaseDataset):
+class CUBDataset(base_data._BaseDataset):
     '''
     CUB Data loader
     '''
@@ -53,7 +53,7 @@ class CUBDataset(base_data.BaseDataset):
         self.data_cache_dir = opts.cub_cache_dir
 
         self.img_dir = osp.join(self.data_dir, 'images')
-        self.anno_path = osp.join(self.data_cache_dir, 'data', '%s_cub_cleaned.mat' % opts.split)
+        self.anno_path = osp.join(self.data_cache_dir, 'data', '%s_cleaned.mat' % opts.split)
         self.anno_sfm_path = osp.join(self.data_cache_dir, 'sfm', 'anno_%s.mat' % opts.split)
 
         if not osp.exists(self.anno_path):

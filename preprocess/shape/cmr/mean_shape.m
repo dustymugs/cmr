@@ -70,7 +70,7 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
         %% Align mean shape to canonical directions
         fprintf('Align mean shape to canonical directions\n')
         good_model = 0;
-        %S = diag([1 1 -1])*S; % preemptively flip
+        S = diag([1 1 -1])*S; % preemptively flip along Z-axis
         while(~good_model)
             R = alignSfmModel(S, lr_edges, bf_edges, tb_edges);
             Srot = R*S;
@@ -121,8 +121,13 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
         z = S(3, :)
         X = [x(:), y(:), z(:)]
 
-        conv_tri_ = delaunayn(X, {'Qt', 'Qbb', 'Qc'});
-        conv_tri = [conv_tri_(:, [1,2,3]); conv_tri_(:, [1,2,4]); conv_tri_(:, [1,3,4]); conv_tri_(:, [4,2,3])];
+        conv_tri_ = cast(delaunayn(X, {'Qt', 'Qbb', 'Qc'}), 'uint8');
+        conv_tri = [
+            conv_tri_(:, [1,2,3]);
+            conv_tri_(:, [1,2,4]);
+            conv_tri_(:, [1,3,4]);
+            conv_tri_(:, [4,2,3])
+        ];
         fprintf('conv_tri:\n')
         disp(conv_tri)
 

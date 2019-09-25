@@ -16,6 +16,7 @@ from __future__ import print_function
 import os.path as osp
 import numpy as np
 
+import scipy.io as sio
 import scipy.linalg
 import scipy.ndimage.interpolation
 import skimage
@@ -38,9 +39,9 @@ __all__ = [
 # ---------------------------------- #
     
 # directory containing the "images" directory
-flags.DEFINE_string('data_dir', None, 'Data Directory')
-# directory containg the "data" and "sfm" directories
-flags.DEFINE_string('cache_dir', None, 'Cache Directory')
+flags.DEFINE_string('data_dir', '', 'Data Directory')
+# directory containing the "data" and "sfm" directories
+flags.DEFINE_string('cache_dir', '', 'Cache Directory')
 
 flags.DEFINE_integer('img_size', 256, 'image size')
 
@@ -51,7 +52,7 @@ flags.DEFINE_float('jitter_frac', 0.05,
                    'bbox is jittered by this fraction of max_dim')
 
 flags.DEFINE_enum('split', 'train', ['train', 'val', 'all', 'test'], 'eval split')
-flags.DEFINE_integer('num_kps', 15, 'The dataloader should override these.')
+#flags.DEFINE_integer('num_kps', 15, 'The dataloader should override these.')
 flags.DEFINE_integer('n_data_workers', 4, 'Number of data loading workers')
 
 
@@ -240,25 +241,25 @@ class BaseDataset(_BaseDataset):
         self.filter_key = filter_key
 
         self.data_dir = opts.data_dir
-        self.data_cache_dir = opts.cache_dir
+        self.cache_dir = opts.cache_dir
 
         self.img_dir = osp.join(self.data_dir, 'images')
         self.anno_path = osp.join(
-            self.data_cache_dir,
+            self.cache_dir,
             'data',
             '{}_cleaned.mat'.format(opts.split)
         )
         self.anno_sfm_path = osp.join(
-            self.data_cache_dir,
+            self.cache_dir,
             'sfm',
             'anno_{}.mat'.format(opts.split)
         )
 
         assert osp.exists(self.anno_path), \
-            '%s not found'.format(self.anno_path)
+            '{} not found'.format(self.anno_path)
 
         # Load the annotation file.
-        print('Loading %s' % self.anno_path)
+        print('Loading {}'.format(self.anno_path))
         self.anno = sio.loadmat(
             self.anno_path,
             struct_as_record=False,
@@ -271,7 +272,7 @@ class BaseDataset(_BaseDataset):
         )['sfm_anno']
 
         self.num_imgs = len(self.anno)
-        print('%d images' % self.num_imgs)
+        print('{} images'.format(self.num_imgs))
 
 # ------------ Data Loader ----------- #
 # ------------------------------------ #

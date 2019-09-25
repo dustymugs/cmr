@@ -82,11 +82,11 @@ class ShapeTrainer(train_utils.Trainer):
             img_size,
             opts,
             nz_feat=opts.nz_feat,
-            num_kps=opts.num_kps,
+            num_kps=len(self.dataloader.dataset.kp_perm),
             sfm_mean_shape=sfm_mean_shape
         )
 
-        if opts.num_pretrain_eCowpochs > 0:
+        if opts.num_pretrain_epochs > 0:
             self.load_network(
                 self.model,
                 'pred',
