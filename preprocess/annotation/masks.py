@@ -3,6 +3,7 @@ import colorsys
 import cv2
 from contextlib import closing
 from itertools import zip_longest
+import math
 import numpy as np
 import os
 import random
@@ -73,21 +74,41 @@ class SegmentImage(object):
 
         return image
 
-    def _filter_instances(self, class_ids, scores=None):
+    def _filter_instances(
+        self,
+        class_ids,
+        boxes,
+        width,
+        height,
+        scores=None,
+        min_box_area_ratio=0.2
+    ):
+
+        max_area = width * height * 1.
+
         if self.only_class_ids:
+
             filtered_instances = []
 
             if scores is None:
                 scores = []
 
-            for idx, (class_id, score) in enumerate(zip_longest(class_ids, scores, fillvalue=0.)):
+            for idx, (class_id, box, score) in \
+                enumerate(zip_longest(class_ids, boxes, scores, fillvalue=0.)):
+
+                x1, y1, x2, y2 = box
+                box_area = math.fabs(x2 - x1) * math.fabs(y2 - y1) * 1.
+
                 if (
                     class_id in self.only_class_ids and
-                    score > self.min_score
+                    score > self.min_score and
+                    box_area / max_area >= min_box_area_ratio
                 ):
+
                     filtered_instances.append(idx)
 
         else:
+
             filtered_instances = list(range(boxes.shape[0]))
 
         return filtered_instances
@@ -405,16 +426,25 @@ class SegmentImage(object):
     def _process_image_frame(self, image_path, frame=None, frame_num=0):
 
         if frame is not None:
-            results = self.model([self.image_to_tensor(image_data=frame)])[0]
+            tensor = self.image_to_tensor(image_data=frame)
         else:
-            results = self.model([self.image_to_tensor(image_path=image_path)])[0]
+            tensor = self.image_to_tensor(image_path=image_path)
+
+        channels, height, width = tensor.shape
+        results = self.model([tensor])[0]
 
         boxes = results['boxes'].detach().cpu().numpy()
         masks = results['masks'].detach().cpu().numpy() >= self.min_mask_score
         class_ids = results['labels'].detach().cpu().numpy()
         scores = results['scores'].detach().cpu().numpy()
 
-        self.filtered_instances = self._filter_instances(class_ids, scores)
+        self.filtered_instances = self._filter_instances(
+            class_ids=class_ids,
+            boxes=boxes,
+            scores=scores,
+            width=width,
+            height=height,
+        )
 
         if self.visualize:
             self.overlay_instances(
@@ -529,13 +559,13 @@ class SegmentImage(object):
                 self._process_videos(videos=video_paths)
 
 @click.command()
-@click.option('--video', multiple=True, type=click.Path())
-@click.option('--image', multiple=True, type=click.Path())
-@click.option('--video-dir', multiple=True, type=click.Path())
-@click.option('--image-dir', multiple=True, type=click.Path())
-@click.option('--class-id', type=int, multiple=True, default=SegmentImage.COCO_IDS)
-@click.option('--min-score', type=float, default=0.5)
-@click.option('--visualize', '-v', is_flag=True)
+@click.option('--video', multiple=True, type=click.Path(), help='Video for Mask-RCNN to process')
+@click.option('--image', multiple=True, type=click.Path(), help='Image for Mask-RCNN to process')
+@click.option('--video-dir', multiple=True, type=click.Path(), help='Directory of videos for Mask-RCNN to process')
+@click.option('--image-dir', multiple=True, type=click.Path(), help='Directory of images for Mask-RCNN to process')
+@click.option('--class-id', type=int, multiple=True, default=SegmentImage.COCO_IDS, help='COCO ID to filter Mask-RCNN results')
+@click.option('--min-score', type=float, default=0.5, help='Mask-RCNN scores below this value will be excluded from the resultset')
+@click.option('--visualize', '-v', is_flag=True, help='Show Mask-RCNN results')
 def do_it(video, image, video_dir, image_dir, class_id, min_score, visualize):
 
     si = SegmentImage(
