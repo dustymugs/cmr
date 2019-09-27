@@ -20,7 +20,7 @@ from os import system
 import itertools
 
 flags.DEFINE_string('name', 'test_model', 'name of the trained model')
-flags.DEFINE_integer('num_train_epoch', 400, 'which epochs to use.')
+flags.DEFINE_string('num_train_epoch', '-1', 'which epochs to use.')
 flags.DEFINE_string('split', 'val', 'which split.')
 opts = flags.FLAGS
 

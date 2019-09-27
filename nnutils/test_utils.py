@@ -29,7 +29,7 @@ flags.DEFINE_string('cache_dir', cache_path, 'Cachedir')
 flags.DEFINE_integer('gpu_id', 0, 'Which gpu to use')
 
 flags.DEFINE_integer('batch_size', 4, 'Size of minibatches')
-flags.DEFINE_string('num_train_epoch', '0', 'Number of training iterations')
+flags.DEFINE_string('num_train_epoch', '-1', 'Number of training iterations')
 
 # Flags for logging and snapshotting
 flags.DEFINE_string('checkpoint_dir',

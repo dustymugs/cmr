@@ -70,6 +70,8 @@ class MeshPredictor(object):
             mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     def load_network(self, network, network_label, epoch_label):
+        if epoch_label == '-1':
+            epoch_label = 'latest'
         save_filename = '{}_net_{}.pth'.format(network_label, epoch_label)
         network_dir = os.path.join(self.opts.checkpoint_dir, self.opts.name)
         save_path = os.path.join(network_dir, save_filename)
