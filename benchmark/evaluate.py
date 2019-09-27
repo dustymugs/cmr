@@ -17,7 +17,7 @@ import torch
 import scipy.io as sio
 
 from ..nnutils import test_utils
-from ..data import cub as cub_data
+from ..data import bird as bird_data
 from ..nnutils import predictor as pred_utils
 from ..utils.shape_vis import convert2np
 
@@ -40,7 +40,7 @@ class ShapeTester(test_utils.Tester):
 
     def init_dataset(self):
         opts = self.opts
-        self.data_module = cub_data
+        self.data_module = bird_data
 
         torch.manual_seed(0)
         self.dataloader = self.data_module.data_loader(opts)

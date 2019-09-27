@@ -19,7 +19,7 @@ import os.path as osp
 # results_dir_base
 from ..nnutils import test_utils
 # split
-from ..data import cub as cub_data
+from ..data import bird as bird_data
 
 import scipy.io as sio
 import numpy as np

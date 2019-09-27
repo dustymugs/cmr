@@ -48,7 +48,7 @@ class MeshPredictor(object):
             self.tex_renderer.ambient_light_only()
 
         if opts.use_sfm_ms:
-            anno_sfm_path = osp.join(opts.cub_cache_dir, 'sfm', 'anno_testval.mat')
+            anno_sfm_path = osp.join(opts.cache_dir, 'sfm', 'anno_testval.mat')
             anno_sfm = sio.loadmat(
                 anno_sfm_path, struct_as_record=False, squeeze_me=True)
             self.sfm_mean_shape = torch.Tensor(np.transpose(anno_sfm['S'])).cuda(
