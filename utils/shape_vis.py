@@ -1,5 +1,5 @@
 """
-Visualization helpers specific to birds.
+Visualization helpers
 """
 
 from __future__ import absolute_import
@@ -222,7 +222,7 @@ def draw_kp(kp, img, radius=None):
     """
     kp is 15 x 2 or 3 numpy.
     img can be either RGB or Gray
-    Draws bird points.
+    Draws keypoints.
     """
     if radius is None:
         radius = max(4, (np.mean(img.shape[:2]) * 0.01).astype(int))

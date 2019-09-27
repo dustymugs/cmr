@@ -24,8 +24,7 @@ import torch
 import torchvision
 
 from ..utils import visutil
-# TODO: bird_vis rename to shape_vis
-from ..utils import bird_vis as shape_vis
+from ..utils import shape_vis
 from ..utils import image as image_utils
 from ..nnutils import geom_utils
 from ..nnutils import loss_utils

@@ -53,10 +53,10 @@ def texture_dt_loss(texture_flow, dist_transf, vis_rend=None, cams=None, verts=N
         dts = dts.permute(0, 2, 3, 4, 1)
         dts = dts.unsqueeze(4).repeat(1, 1, 1, 1, T, 1) / dts.max()
 
-        from ..utils import bird_vis
+        from ..utils import shape_vis
         for i in range(dist_transf.size(0)):
             rend_dt = vis_rend(verts[i], cams[i], dts[i])
-            rend_img = bird_vis.tensor2im(tex_pred[i].data)            
+            rend_img = shape_vis.tensor2im(tex_pred[i].data)            
             import matplotlib.pyplot as plt
             plt.ion()
             fig=plt.figure(1)
