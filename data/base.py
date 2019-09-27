@@ -131,7 +131,7 @@ class _BaseDataset(Dataset):
         # Finally transpose the image to 3xHxW
         img = np.transpose(img, (2, 0, 1))
 
-        return img, kp_norm, mask, sfm_pose
+        return data.rel_path, img, kp_norm, mask, sfm_pose
 
     def normalize_kp(self, kp, sfm_pose, img_h, img_w):
         vis = kp[:, 2, None] > 0
@@ -205,10 +205,11 @@ class _BaseDataset(Dataset):
         return self.num_imgs
 
     def __getitem__(self, index):
-        img, kp, mask, sfm_pose = self.forward_img(index)
+        rel_path, img, kp, mask, sfm_pose = self.forward_img(index)
         sfm_pose[0].shape = 1
 
         elem = {
+            'rel_path': rel_path,
             'img': img,
             'kp': kp,
             'mask': mask,

@@ -146,9 +146,12 @@ class Trainer(object):
         for epoch in range(opts.num_pretrain_epochs, opts.num_epochs):
             epoch_iter = 0
             for i, batch in enumerate(self.dataloader):
+                rel_paths = batch['rel_path']
+                del batch['rel_path']
                 iter_start_time = time.time()
                 self.set_input(batch)
                 if not self.invalid_batch:
+                    #print(rel_paths)
                     self.optimizer.zero_grad()
                     self.forward()
                     self.smoothed_total_loss = \

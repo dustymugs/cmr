@@ -22,6 +22,17 @@ class SegmentImage(object):
         21, # cow
     )
 
+    VIDEO_EXTENSIONS = (
+        'avi',
+        'mp4',
+        'mkv',
+    )
+    IMAGE_EXTENSIONS = (
+        'jpg',
+        'jpeg',
+        'png',
+    )
+
     @property
     def model(self):
 
@@ -232,6 +243,8 @@ class SegmentImage(object):
         only_class_ids=None,
         min_score=0.5,
         min_mask_score=0.5,
+        video_extensions=None,
+        image_extensions=None,
         visualize=False,
     ):
 
@@ -242,6 +255,8 @@ class SegmentImage(object):
         self.only_class_ids = only_class_ids
         self.min_score = min_score
         self.min_mask_score = min_mask_score
+        self.video_extensions = video_extensions or self.VIDEO_EXTENSIONS
+        self.image_extensions = image_extensions or self.IMAGE_EXTENSIONS
         self.visualize = visualize
 
         # Generate random colors for COCO
@@ -497,6 +512,7 @@ class SegmentImage(object):
 
         for image_path in image_paths:
 
+            print('Processing Image: {}'.format(image_path))
             self._process_image_frame(image_path=image_path)
 
     def _process_image_dirs(self):
@@ -507,6 +523,8 @@ class SegmentImage(object):
 
                 for f in files:
                     image_path = os.path.join(root, f)
+                    if os.path.splitext(image_path)[-1][1:].lower() not in self.image_extensions:
+                        continue
 
                     try:
                         skimage.io.imread(image_path)
@@ -521,6 +539,7 @@ class SegmentImage(object):
 
         for video_path in video_paths:
 
+            print('Processing Video: {}'.format(video_path))
             src = cv2.VideoCapture(video_path)
 
             frame_num = 0
@@ -548,6 +567,8 @@ class SegmentImage(object):
                 video_paths = set()
                 for f in files:
                     video_path = os.path.join(root, f)
+                    if os.path.splitext(video_path)[-1][1:].lower() not in self.video_extensions:
+                        continue
 
                     try:
                         cv2.VideoCapture(video_path)
@@ -565,8 +586,20 @@ class SegmentImage(object):
 @click.option('--image-dir', multiple=True, type=click.Path(), help='Directory of images for Mask-RCNN to process')
 @click.option('--class-id', type=int, multiple=True, default=SegmentImage.COCO_IDS, help='COCO ID to filter Mask-RCNN results')
 @click.option('--min-score', type=float, default=0.5, help='Mask-RCNN scores below this value will be excluded from the resultset')
+@click.option('--video-extension', '-vx', multiple=True)
+@click.option('--image-extension', '-ix', multiple=True)
 @click.option('--visualize', '-v', is_flag=True, help='Show Mask-RCNN results')
-def do_it(video, image, video_dir, image_dir, class_id, min_score, visualize):
+def do_it(
+    video,
+    image,
+    video_dir,
+    image_dir,
+    class_id,
+    min_score,
+    video_extension,
+    image_extension,
+    visualize
+):
 
     si = SegmentImage(
         videos=video,
@@ -575,6 +608,8 @@ def do_it(video, image, video_dir, image_dir, class_id, min_score, visualize):
         image_dirs=image_dir,
         only_class_ids=class_id,
         min_score=min_score,
+        video_extensions=video_extension,
+        image_extensions=image_extension,
         visualize=visualize,
     )
 
