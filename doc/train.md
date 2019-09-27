@@ -69,7 +69,7 @@ Change the value of `--name` to whatever you want to call the model and change `
 
 ```
 cd /
-python -m cmr.experiments.shape --name=bird_net --display_visuals --plot_scalars --cub_dir=/cmr/CUB_200_2011/
+python -m cmr.experiments.bird --name=bird_net --display_visuals --plot_scalars --data_dir=/cmr/CUB_200_2011 --cache_dir=/cmr/cachedir/cub
 ```
 
 To monitor training progress, use your browser to connect to the Visdom server at port 8097

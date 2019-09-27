@@ -23,15 +23,14 @@ grep -R flags.DEFINE | egrep ^(data|experiments|nnutils).* | grep ":flags."
 
 File | Flag | Default Value | Details
 ---- | ---- | ------------- | -------
-data/cub.py | cub_dir | "kData" | CUB Data Directory
-data/cub.py | cub_cache_dir | os.path.join(cache_path, cub) | CUB Cache Directory
+data/base.py | data_dir | None | Data Directory for source images
+data/base.py | cache_dir | None | Cache Directory for Annotations and SFM MAT files
 data/base.py | img_size | 256 | image size
 data/base.py | padding_frac | 0.05 |
 data/base.py | jitter_frac | 0.05 |
 data/base.py | split | "train" | [train, val, all, test], eval split
 data/base.py | num_kps | 15 | The dataloader should override these.
 data/base.py | n_data_workers | 4 | Number of data loading workers
-experiments/shape.py | dataset | "cub" | cub or pascal or p3d
 experiments/shape.py | kp_loss_wt | 30. | keypoint loss weight
 experiments/shape.py | mask_loss_wt | 2. | mask loss weight
 experiments/shape.py | cam_loss_wt | 2. | weights to camera loss
