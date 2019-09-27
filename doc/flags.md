@@ -9,7 +9,7 @@ python ... --FLAG_NAME=FLAG_VALUE ...
 Example
 
 ```
-python -m cmr.experiments.shape --name=bird_net --display_visuals --plot_scalars --cub_dir=/cmr/CUB_200_2011/ --num_epochs=500
+python -m cmr.experiments.shape --name=bird_net --display_visuals --plot_scalars --data_dir=/cmr/CUB_200_2011/ --cache_dir=/cmr/cachedir/cub --num_epochs=500
 ```
 
 ## Training Flags
