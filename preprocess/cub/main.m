@@ -15,7 +15,6 @@ project_dir = '/cmr/cachedir/cub';
 % always call init_cmr first
 init_cmr()
 
-dbstop mean_shape 25
 mean_shape(project_dir, 'train', kp_names, kp_perm, kp_left_right, kp_back_front, kp_top_bottom);
 mean_shape(project_dir, 'testval', kp_names, kp_perm, kp_left_right, kp_back_front, kp_top_bottom);
 split_valtest(project_dir);

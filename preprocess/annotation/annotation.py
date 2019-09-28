@@ -2,6 +2,7 @@ import click
 from contextlib import closing
 import cv2
 import copy
+import json
 import math
 import matplotlib as mpl
 import numpy as np
@@ -87,7 +88,8 @@ class AnnotationManager(object):
             assert new_value is not None
         if new_value is not None and not allow_not_exist:
             is_type = getattr(osp, 'is{}'.format(type_))
-            assert is_type(new_value)
+            assert is_type(new_value), \
+                'Not a {}: {}'.format(type_, new_value)
 
         self._set_attribute(kw, new_value)
 
@@ -147,6 +149,27 @@ class AnnotationManager(object):
     def ignore_file(self, new_value):
         self._set_path_attribute('_ignore_file', new_value, allow_none=True)
 
+    @property
+    def skeleton_file(self):
+        return self._get_attribute('_skeleton_file')
+
+    @skeleton_file.setter
+    def skeleton_file(self, new_value):
+        self._set_path_attribute('_skeleton_file', new_value, allow_none=True)
+
+    @property
+    def max_kp_diff(self):
+        return self._max_kp_diff
+
+    @max_kp_diff.setter
+    def max_kp_diff(self, new_value):
+
+        if new_value is not None:
+            assert new_value >= 0., \
+                'max_kp_diff must be a positive value'
+
+        self._max_kp_diff = new_value
+
     def __init__(
         self,
         annotation_file,
@@ -155,7 +178,10 @@ class AnnotationManager(object):
         video_file=None,
         image_file=None,
         frame_dir=None,
+        no_frames=False,
         ignore_file=None,
+        max_kp_diff=None,
+        skeleton_file=None
     ):
 
         self.annotation_file = annotation_file
@@ -168,7 +194,11 @@ class AnnotationManager(object):
         self.video_file = video_file
         self.image_file = image_file
         self.frame_dir = frame_dir
+        self.no_frames = no_frames
         self.ignore_file = ignore_file
+
+        self.max_kp_diff = max_kp_diff
+        self.skeleton_file = skeleton_file
 
     def _load_annotation_data(self, raise_error=True):
 
@@ -378,6 +408,9 @@ class AnnotationManager(object):
             )
         )
 
+        if self.no_frames:
+            return frames_path
+
         os.makedirs(frames_path, exist_ok=True)
 
         src = cv2.VideoCapture(self.video_file)
@@ -459,6 +492,25 @@ class AnnotationManager(object):
 
         return False
 
+    def _get_dimensions(self):
+
+        if self.video_file:
+
+            cap = cv2.VideoCapture(self.video_file)
+            width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+        else:
+
+            im = Image.open(self.image_file)
+            width = im.width
+            height = im.height
+
+        assert width > 0
+        assert height > 0
+
+        return height, width
+
     def update(self):
 
         assert self.video_file is not None or self.image_file is not None, \
@@ -474,7 +526,12 @@ class AnnotationManager(object):
         the_file = self.video_file or self.image_file
         the_full_file = osp.abspath(the_file)
 
-        keypoints, parts = self._load_keypoint_data()
+        height, width = self._get_dimensions()
+
+        parts = self._load_keypoint_data(
+            height=height,
+            width=width
+        )
         masks_boxes = self._load_masks_boxes()
 
         # delete any reference to the_file
@@ -487,7 +544,7 @@ class AnnotationManager(object):
 
         # add rows to self._images
         dtype = self.STRUCTURED_DTYPES['images']
-        num_keypoints = len(keypoints)
+        num_keypoints = len(self.keypoints)
         for frame_num, mask_box in masks_boxes.items():
 
             frame_parts = parts[frame_num]
@@ -548,7 +605,42 @@ class AnnotationManager(object):
 
         return masks_boxes
 
-    def _load_keypoint_data(self):
+    def _filter_keypoints_using_skeleton(self, kp_data):
+
+        return kp_data
+        if not self.skeleton_file:
+            return kp_data
+
+        with open(self.skeleton_file, 'r') as fh:
+            skeleton = json.load(fh)['skeleton']
+
+        keypoint_pairs = [
+            [self.keypoints.index(a), self.keypoints.index(b)]
+            for (a, b) in skeleton
+        ]
+
+        for (a_idx, b_idx) in keypoint_pairs:
+
+            a = kp_data[a_idx]
+            b = kp_data[b_idx]
+
+            ax = a[0]
+            ay = a[1]
+            bx = b[0]
+            by = b[1]
+
+            c_length = np.sqrt(np.square(bx - ax) + np.square(by - ay))
+
+            # remove outlier
+            #
+            # by standard deviation?
+            # c_length > c_length.mean() + c_length.std() * 3
+            #
+            # by acceleration?
+
+        return kp_data
+
+    def _load_keypoint_data(self, height=None, width=None):
 
         #
         # written for DeepLabCut pandas dataframes
@@ -561,11 +653,10 @@ class AnnotationManager(object):
         assert len(scorer) == 1
         scorer = scorer.pop()
 
-        keypoints = []
+        self.keypoints = keypoints = []
         for kp in df.columns.get_level_values(1):
             if kp not in keypoints:
                 keypoints.append(kp)
-        #print('keypoints:', keypoints)
 
         # x, y, likelihood
         parameters = set(df.columns.get_level_values(2))
@@ -573,19 +664,40 @@ class AnnotationManager(object):
 
         kp_data = []
         for kp in keypoints:
-            #X = np.around(df[scorer][kp]['x'].values).astype(np.uint16)
-            #Y = np.around(df[scorer][kp]['y'].values).astype(np.uint16)
             X = df[scorer][kp]['x'].values
             Y = df[scorer][kp]['y'].values
 
             X[X < 0.] = 0.
             Y[Y < 0.] = 0.
 
+            if height is not None:
+                Y[Y > height] = height
+            if width is not None:
+                X[X > width] = width
+
+            # present/absent
             P = (df[scorer][kp]['likelihood'].values >= 0.99)
+
+            # remove outlier keypoints
+            if self.max_kp_diff is not None:
+                outlier_x = np.absolute(np.diff(X)) > self.max_kp_diff
+                outlier_y = np.absolute(np.diff(Y)) > self.max_kp_diff
+
+                outlier_x = np.insert(outlier_x, 0, False)
+                outlier_y = np.insert(outlier_y, 0, False)
+
+                if outlier_x.any():
+                    print('Marking keypoints absent along X-axis: {}'.format(kp))
+                    np.place(P, outlier_x, False)
+                if outlier_y.any():
+                    print('Marking keypoints absent along Y-axis: {}'.format(kp))
+                    np.place(P, outlier_y, False)
 
             kp_data.append(np.array([X, Y, P]))
 
-        return keypoints, np.array(kp_data).transpose()
+        kp_data = self._filter_keypoints_using_skeleton(kp_data)
+
+        return np.array(kp_data).transpose()
 
 @click.command()
 @click.argument('action', type=click.Choice(('update', 'verify')))
@@ -595,8 +707,23 @@ class AnnotationManager(object):
 @click.option('--video', '-v', type=click.Path(), help='Video file to be added/updated. Frames will be extracted and placed next to the video file')
 @click.option('--image', '-i', type=click.Path(), help='Image file to be added/updated')
 @click.option('--frame-dir', type=click.Path(), help='Existing directory in which vidoe frames will be placed')
+@click.option('--no-frames', is_flag=True, default=False, help='Do not extract frames from videos')
 @click.option('--ignore', type=click.Path(), help='Ignore file with list of frame numbers (0-based) to exclude')
-def do_it(action, annotation, mask, keypoint, video, image, frame_dir, ignore):
+@click.option('--max-kp-diff', type=float, help='Maximum pixel difference for a keypoint from frame to frame')
+@click.option('--skeleton', type=click.Path(), help='Skeleton file in JSON format')
+def do_it(
+    action,
+    annotation,
+    mask,
+    keypoint,
+    video,
+    image,
+    frame_dir,
+    no_frames,
+    ignore,
+    max_kp_diff,
+    skeleton,
+):
     '''
     Utility to update and verify the provided <ANNOTATION> MatLab file for
     consumption by CMR
@@ -618,7 +745,10 @@ def do_it(action, annotation, mask, keypoint, video, image, frame_dir, ignore):
         video_file=video,
         image_file=image,
         frame_dir=frame_dir,
+        no_frames=no_frames,
         ignore_file=ignore,
+        max_kp_diff=max_kp_diff,
+        skeleton_file=skeleton
     )
 
     fn = getattr(mgr, action)

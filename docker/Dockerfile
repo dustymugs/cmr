@@ -29,6 +29,7 @@ RUN mkdir -p $CONDA_DIR && \
 RUN apt-get update && \
     apt-get install -y git wget curl bzip2 unzip gnupg2 tree libglib2.0 && \
     apt-get install -y libsm6 libxext6 libxrender-dev && \
+    apt-get install -y libgl1-mesa-glx libgl1-mesa-dri && \
     apt-get install -y octave && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

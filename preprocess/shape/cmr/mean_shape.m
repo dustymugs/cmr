@@ -1,6 +1,10 @@
-function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edges, tb_edges)
+function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edges, tb_edges, force_new)
 
     fprintf('Computing mean shape: %s\n', split_name)
+
+    if nargin < 8
+        force_new = false
+    end
 
     mean_shape_dir = fullfile(project_dir, 'sfm');
     mean_shape_path = fullfile(mean_shape_dir, ['anno_' split_name '.mat']);
@@ -12,7 +16,7 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
     fprintf('Input File: %s\n', data_file)
     fprintf('Output File: %s\n', mean_shape_path)
 
-    if ~exist(mean_shape_path)
+    if (force_new || ~exist(mean_shape_path))
         fprintf('Computing new mean shape\n')
         kps_all = [];
         vis_all = [];
@@ -70,17 +74,17 @@ function mean_shape(project_dir, split_name, kp_names, kp_perm, lr_edges, bf_edg
         %% Align mean shape to canonical directions
         fprintf('Align mean shape to canonical directions\n')
         good_model = 0;
-        S = diag([1 1 -1])*S; % preemptively flip along Z-axis
+        S = diag([1 1 -1]) * S; % preemptively flip along Z-axis
         while(~good_model)
             R = alignSfmModel(S, lr_edges, bf_edges, tb_edges);
-            Srot = R*S;
+            Srot = R * S;
             show3dModel(Srot, kp_names, 'convex_hull');
-            user_in = input('Is this model aligned ? "y" will save and "n" will flip along the Z-axis: ','s');
+            user_in = input('Is this model aligned? "y" will save and "n" will flip along the Z-axis: ','s');
             if(strcmp(user_in,'y'))
                 good_model = 1;
                 disp('Ok !')
             else
-                S = diag([1 1 -1])*S;
+                S = diag([1 1 -1]) * S;
             end
             close all;
         end
