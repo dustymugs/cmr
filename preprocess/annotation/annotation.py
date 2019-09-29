@@ -1,10 +1,15 @@
 import click
+import colorsys
 from contextlib import closing
 import cv2
 import copy
 import json
 import math
 import matplotlib as mpl
+import matplotlib.patches
+import matplotlib.pyplot as plt
+import matplotlib.widgets
+import mpl_toolkits.axes_grid1
 import numpy as np
 import os
 import os.path as osp
@@ -15,6 +20,94 @@ import re
 import scipy.io as sio
 import tables as tb
 import time
+
+# https://stackoverflow.com/a/41731455/3121505
+class PageSlider(matplotlib.widgets.Slider):
+
+    def __init__(self, ax, label, numpages = 10, valinit=0, valfmt='%1d', 
+                 closedmin=True, closedmax=True,  
+                 dragging=True, **kwargs):
+
+        self.facecolor=kwargs.get('facecolor',"w")
+        self.activecolor = kwargs.pop('activecolor',"b")
+        self.fontsize = kwargs.pop('fontsize', 10)
+        self.numpages = numpages
+
+        super(PageSlider, self).__init__(ax, label, 0, numpages, 
+                            valinit=valinit, valfmt=valfmt, **kwargs)
+
+        self.poly.set_visible(False)
+        self.vline.set_visible(False)
+        self.pageRects = []
+        for i in range(numpages):
+            facecolor = self.activecolor if i==valinit else self.facecolor
+            r  = matplotlib.patches.Rectangle(
+                (float(i) / numpages, 0), 
+                1. / numpages,
+                1, 
+                transform=ax.transAxes,
+                facecolor=facecolor
+            )
+            ax.add_artist(r)
+            self.pageRects.append(r)
+            ax.text(
+                float(i) / numpages + 0.5 / numpages,
+                0.5,
+                str(i+1),
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=self.fontsize
+            )
+        self.valtext.set_visible(False)
+
+        divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
+        bax = divider.append_axes("right", size="5%", pad=0.05)
+        fax = divider.append_axes("right", size="5%", pad=0.05)
+        self.button_back = matplotlib.widgets.Button(
+            bax,
+            label='\u25C0', 
+            color=self.facecolor,
+            hovercolor=self.activecolor
+        )
+        self.button_forward = matplotlib.widgets.Button(
+            fax,
+            label='\u25B6',
+            color=self.facecolor,
+            hovercolor=self.activecolor
+        )
+        self.button_back.label.set_fontsize(self.fontsize)
+        self.button_forward.label.set_fontsize(self.fontsize)
+        self.button_back.on_clicked(self.backward)
+        self.button_forward.on_clicked(self.forward)
+
+    def _update(self, event):
+        super(PageSlider, self)._update(event)
+        i = int(self.val)
+        if i >=self.valmax:
+            return
+        self._colorize(i)
+
+    def _colorize(self, i):
+        for j in range(self.numpages):
+            self.pageRects[j].set_facecolor(self.facecolor)
+        self.pageRects[i].set_facecolor(self.activecolor)
+
+    def forward(self, event):
+        current_i = int(self.val)
+        i = current_i+1
+        if (i < self.valmin) or (i >= self.valmax):
+            return
+        self.set_val(i)
+        self._colorize(i)
+
+    def backward(self, event):
+        current_i = int(self.val)
+        i = current_i-1
+        if (i < self.valmin) or (i >= self.valmax):
+            return
+        self.set_val(i)
+        self._colorize(i)
 
 class DynamicRecArray(object):
     def __init__(self, dtype, size=10):
@@ -181,7 +274,7 @@ class AnnotationManager(object):
         no_frames=False,
         ignore_file=None,
         max_kp_diff=None,
-        skeleton_file=None
+        skeleton_file=None,
     ):
 
         self.annotation_file = annotation_file
@@ -203,14 +296,20 @@ class AnnotationManager(object):
     def _load_annotation_data(self, raise_error=True):
 
         try:
+
             self.annotation_data = sio.loadmat(self.annotation_file)
+
         except FileNotFoundError:
+
             if raise_error:
                 raise
             else:
                 self.annotation_data = None
                 return False
+
         else:
+
+            self.keypoints = self.annotation_data.get('keypoints', [])
             return True
 
     def _save_annotation_data(self):
@@ -328,6 +427,7 @@ class AnnotationManager(object):
 
         # we intentionally exclude everything not required for CMR to run
         if self.annotation_data is not None:
+
             images = self.annotation_data['images'][0]
             for record in images:
                 row = np.array(
@@ -393,7 +493,8 @@ class AnnotationManager(object):
     def _save_annotation_data_structure(self):
 
         self.annotation_data = {
-            'images': self._images.data
+            'images': self._images.data,
+            'keypoints': self.keypoints
         }
 
     def _extract_frames(self):
@@ -699,8 +800,184 @@ class AnnotationManager(object):
 
         return np.array(kp_data).transpose()
 
+    def _random_colors(self, N, bright=True):
+        """
+        Generate random colors.
+        To get visually distinct colors, generate them in HSV space then
+        convert to RGB.
+        """
+        random.seed(0)
+        brightness = 1.0 if bright else 0.7
+        hsv = [(i / N, 1, brightness) for i in range(N)]
+        colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+        random.shuffle(colors)
+        return colors
+
+    def _show_review_window(
+        self,
+        images,
+        num_keypoints,
+        colors,
+        num_images_per_window=25
+    ):
+
+        plt.close('all')
+
+        fig, ax = plt.subplots(figsize=(14, 9))
+        ax_slider = fig.add_axes([0.1, 0.05, 0.8, 0.04])
+        slider = PageSlider(
+            ax_slider,
+            'Images',
+            num_images_per_window,
+            activecolor='orange',
+            valstep=1,
+        )
+
+        slider.window_idx = 0
+        total_windows = math.ceil(len(images) / num_images_per_window)
+        slider.start_idx = slider.window_idx * num_images_per_window
+
+        #print('Showing window: {}'.format(slider.window_idx + 1))
+
+        def onkeyrelease(evt):
+
+            if evt.key == 'right':
+
+                if slider.val + 1 == num_images_per_window:
+
+                    next_window_idx = slider.window_idx + 1
+                    if next_window_idx < total_windows:
+                        i = 0
+                        slider.set_val(i)
+                        slider._colorize(i)
+                        slider.window_idx = next_window_idx
+                        update_plot(slider.val)
+
+                else:
+
+                    slider.forward(None)
+
+            elif evt.key == 'left':
+
+                if slider.val - 1 < 0:
+
+                    next_window_idx = slider.window_idx - 1
+                    if next_window_idx >= 0:
+                        i = num_images_per_window - 1
+                        slider.set_val(i)
+                        slider._colorize(i)
+                        slider.window_idx = next_window_idx
+                        update_plot(slider.val)
+
+                else:
+
+                    slider.backward(None)
+
+            elif evt.key == 'up':
+
+                next_window_idx = slider.window_idx + 1
+                if next_window_idx < total_windows:
+                    slider.window_idx = next_window_idx
+                else:
+                    i = num_images_per_window - 1
+                    slider.set_val(i)
+                    slider._colorize(i)
+
+                update_plot(slider.val)
+
+            elif evt.key == 'down':
+
+                next_window_idx = slider.window_idx - 1
+                if next_window_idx >= 0:
+                    slider.window_idx = next_window_idx
+                else:
+                    i = 0
+                    slider.set_val(i)
+                    slider._colorize(i)
+
+                update_plot(slider.val)
+
+        def update_plot(i):
+
+            ax.clear()
+
+            idx = (slider.window_idx * num_images_per_window) + int(i)
+            row = images[idx]
+
+            rel_path = row['rel_path'].item()
+            mask = row['mask']
+            bbox = row['bbox'] # x1, y1, x2, y2
+            parts = row['parts']
+
+            title = 'Window {current_window}/{total_windows}\n{row_index} {path}'.format(
+                current_window=slider.window_idx + 1,
+                total_windows=total_windows,
+                row_index=idx,
+                path=rel_path
+            )
+            ax.set_title(title)
+
+            for kpi in range(num_keypoints):
+                x = parts[0][kpi]
+                y = parts[1][kpi]
+                p = parts[2][kpi]
+
+                if p != 1.:
+                    continue
+
+                label = (
+                    self.keypoints[kpi]
+                    if len(self.keypoints)
+                    else kpi
+                )
+
+                ax.scatter(
+                    x,
+                    y,
+                    s=10,
+                    c=[colors[kpi]],
+                    label=label,
+                )
+                ax.annotate(
+                    label,
+                    (x, y),
+                    xytext=(x + 10, y + 10),
+                    backgroundcolor='black',
+                    color='white',
+                    alpha=0.5,
+                )
+
+            im = Image.open(rel_path)
+            ima = np.array(im)
+            ax.imshow(
+                ima,
+                zorder=0,
+                extent=[0, im.width, im.height, 0]
+            )
+
+            ax.legend(bbox_to_anchor=(1.12, 1.))
+            fig.show()
+
+        slider.on_changed(update_plot)
+        fig.canvas.mpl_connect('key_release_event', onkeyrelease)
+
+        update_plot(0)
+        plt.show()
+
+    def review(self):
+
+        self._load_annotation_data()
+
+        images = self.annotation_data['images'][0]
+
+        num_keypoints = images[0]['parts'].shape[-1]
+        colors = self._random_colors(num_keypoints)
+
+        self._show_review_window(images, num_keypoints, colors)
+        plt.close('all')
+
 @click.command()
-@click.argument('action', type=click.Choice(('update', 'verify')))
+@click.argument('action', type=click.Choice(('update', 'verify', 'review')))
 @click.argument('annotation', type=click.Path())
 @click.option('--mask', '-m', type=click.Path(), help='Mask file of the Video or Image file')
 @click.option('--keypoint', '-k', type=click.Path(), help='Keypoint file of the Video or Image file')
@@ -725,7 +1002,7 @@ def do_it(
     skeleton,
 ):
     '''
-    Utility to update and verify the provided <ANNOTATION> MatLab file for
+    Utility to update, verify, review the provided <ANNOTATION> MatLab file for
     consumption by CMR
     '''
 
@@ -748,7 +1025,7 @@ def do_it(
         no_frames=no_frames,
         ignore_file=ignore,
         max_kp_diff=max_kp_diff,
-        skeleton_file=skeleton
+        skeleton_file=skeleton,
     )
 
     fn = getattr(mgr, action)
