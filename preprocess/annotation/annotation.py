@@ -289,7 +289,7 @@ class AnnotationManager(object):
         ignore_file=None,
         max_kp_diff=None,
         skeleton_file=None,
-        exclude_kps=None
+        exclude_keypoints=None
     ):
 
         self.annotation_file = annotation_file
@@ -307,7 +307,7 @@ class AnnotationManager(object):
 
         self.max_kp_diff = max_kp_diff
         self.skeleton_file = skeleton_file
-        self.exclude_kps = exclude_kps
+        self.exclude_keypoints = exclude_keypoints
 
     def _load_annotation_data(self, raise_error=True):
 
@@ -780,15 +780,14 @@ class AnnotationManager(object):
             if kp not in keypoints:
                 keypoints.append(kp)
 
+        self._filtered_keypoints()
+
         # x, y, likelihood
         parameters = set(df.columns.get_level_values(2))
         assert parameters == set(('x', 'y', 'likelihood'))
 
         kp_data = []
         for kp in keypoints:
-
-            if self._exclude_kp(kp):
-                continue
 
             X = df[scorer][kp]['x'].values
             Y = df[scorer][kp]['y'].values
@@ -813,11 +812,11 @@ class AnnotationManager(object):
                 outlier_y = np.insert(outlier_y, 0, False)
 
                 if outlier_x.any():
-                    print('Marking keypoints absent along X-axis: {}'.format(kp))
-                    np.place(P, outlier_x, False)
+                    P[outlier_x, ...] = False
+                    #np.place(P, outlier_x, False)
                 if outlier_y.any():
-                    print('Marking keypoints absent along Y-axis: {}'.format(kp))
-                    np.place(P, outlier_y, False)
+                    P[outlier_y, ...] = False
+                    #np.place(P, outlier_y, False)
 
             kp_data.append(np.array([X, Y, P]))
 
@@ -825,12 +824,16 @@ class AnnotationManager(object):
 
         return np.array(kp_data).transpose()
 
-    def _exclude_kp(self, kp):
+    def _filtered_keypoints(self):
 
-        return (
-            kp in self.keypoints or
-            int(self.keypoints.index(kp)) in self.keypoints
-        )
+        self.keypoints = [
+            kp
+            for kp in self.keypoints
+            if (
+                kp not in self.exclude_keypoints and
+                int(self.keypoints.index(kp)) not in self.exclude_keypoints
+            )
+        ]
 
     def _random_colors(self, N, bright=True):
         """
@@ -869,8 +872,6 @@ class AnnotationManager(object):
         slider.page_idx = 0
         total_pages = math.ceil(num_images / num_images_per_page)
         slider.start_idx = slider.page_idx * num_images_per_page
-
-        #print('Showing page: {}'.format(slider.page_idx + 1))
 
         def onkeyrelease(evt):
 
@@ -1063,7 +1064,7 @@ def do_it(
         ignore_file=ignore,
         max_kp_diff=max_kp_diff,
         skeleton_file=skeleton,
-        exclude_kps=exclude_kp
+        exclude_keypoints=exclude_kp
     )
 
     fn = getattr(mgr, action)
