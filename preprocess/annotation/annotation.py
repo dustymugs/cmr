@@ -263,6 +263,20 @@ class AnnotationManager(object):
 
         self._max_kp_diff = new_value
 
+    @property
+    def exclude_kp(self):
+        return self._exclude_kp
+
+    @exclude_kp.setter
+    def exclude_kp(self, new_value):
+
+        if new_value is None:
+            new_value = tuple()
+        assert hasattr(new_value, '__iter__'), \
+            '"exclude_kp" is not iterable (e.g. list, set, tuple)'
+
+        self._exclude_kp = new_value
+
     def __init__(
         self,
         annotation_file,
@@ -275,6 +289,7 @@ class AnnotationManager(object):
         ignore_file=None,
         max_kp_diff=None,
         skeleton_file=None,
+        exclude_kps=None
     ):
 
         self.annotation_file = annotation_file
@@ -292,6 +307,7 @@ class AnnotationManager(object):
 
         self.max_kp_diff = max_kp_diff
         self.skeleton_file = skeleton_file
+        self.exclude_kps = exclude_kps
 
     def _load_annotation_data(self, raise_error=True):
 
@@ -733,11 +749,16 @@ class AnnotationManager(object):
             c_length = np.sqrt(np.square(bx - ax) + np.square(by - ay))
 
             # remove outlier
-            #
+
             # by standard deviation?
-            # c_length > c_length.mean() + c_length.std() * 3
-            #
+            outliers = c_length > c_length.mean() + c_length.std() * 2
+
             # by acceleration?
+            # prepend by two
+            _c_length = c_length.copy()
+            np.insert(_c_length, 0, _c_length[1:3])
+            accel = np.absolute(np.diff(_c_length, n=2))
+            outliers = accel > accel.mean() + accel.std() * 2
 
         return kp_data
 
@@ -765,6 +786,10 @@ class AnnotationManager(object):
 
         kp_data = []
         for kp in keypoints:
+
+            if self._exclude_kp(kp):
+                continue
+
             X = df[scorer][kp]['x'].values
             Y = df[scorer][kp]['y'].values
 
@@ -800,6 +825,13 @@ class AnnotationManager(object):
 
         return np.array(kp_data).transpose()
 
+    def _exclude_kp(self, kp):
+
+        return (
+            kp in self.keypoints or
+            int(self.keypoints.index(kp)) in self.keypoints
+        )
+
     def _random_colors(self, N, bright=True):
         """
         Generate random colors.
@@ -818,7 +850,7 @@ class AnnotationManager(object):
         images,
         num_keypoints,
         colors,
-        num_images_per_window=25
+        num_images_per_page=25
     ):
 
         plt.close('all')
@@ -828,29 +860,30 @@ class AnnotationManager(object):
         slider = PageSlider(
             ax_slider,
             'Images',
-            num_images_per_window,
+            num_images_per_page,
             activecolor='orange',
             valstep=1,
         )
 
-        slider.window_idx = 0
-        total_windows = math.ceil(len(images) / num_images_per_window)
-        slider.start_idx = slider.window_idx * num_images_per_window
+        num_images = len(images)
+        slider.page_idx = 0
+        total_pages = math.ceil(num_images / num_images_per_page)
+        slider.start_idx = slider.page_idx * num_images_per_page
 
-        #print('Showing window: {}'.format(slider.window_idx + 1))
+        #print('Showing page: {}'.format(slider.page_idx + 1))
 
         def onkeyrelease(evt):
 
             if evt.key == 'right':
 
-                if slider.val + 1 == num_images_per_window:
+                if slider.val + 1 == num_images_per_page:
 
-                    next_window_idx = slider.window_idx + 1
-                    if next_window_idx < total_windows:
+                    next_page_idx = slider.page_idx + 1
+                    if next_page_idx < total_pages:
                         i = 0
                         slider.set_val(i)
                         slider._colorize(i)
-                        slider.window_idx = next_window_idx
+                        slider.page_idx = next_page_idx
                         update_plot(slider.val)
 
                 else:
@@ -861,12 +894,12 @@ class AnnotationManager(object):
 
                 if slider.val - 1 < 0:
 
-                    next_window_idx = slider.window_idx - 1
-                    if next_window_idx >= 0:
-                        i = num_images_per_window - 1
+                    next_page_idx = slider.page_idx - 1
+                    if next_page_idx >= 0:
+                        i = num_images_per_page - 1
                         slider.set_val(i)
                         slider._colorize(i)
-                        slider.window_idx = next_window_idx
+                        slider.page_idx = next_page_idx
                         update_plot(slider.val)
 
                 else:
@@ -875,11 +908,11 @@ class AnnotationManager(object):
 
             elif evt.key == 'up':
 
-                next_window_idx = slider.window_idx + 1
-                if next_window_idx < total_windows:
-                    slider.window_idx = next_window_idx
+                next_page_idx = slider.page_idx + 1
+                if next_page_idx < total_pages:
+                    slider.page_idx = next_page_idx
                 else:
-                    i = num_images_per_window - 1
+                    i = num_images_per_page - 1
                     slider.set_val(i)
                     slider._colorize(i)
 
@@ -887,9 +920,9 @@ class AnnotationManager(object):
 
             elif evt.key == 'down':
 
-                next_window_idx = slider.window_idx - 1
-                if next_window_idx >= 0:
-                    slider.window_idx = next_window_idx
+                next_page_idx = slider.page_idx - 1
+                if next_page_idx >= 0:
+                    slider.page_idx = next_page_idx
                 else:
                     i = 0
                     slider.set_val(i)
@@ -901,7 +934,9 @@ class AnnotationManager(object):
 
             ax.clear()
 
-            idx = (slider.window_idx * num_images_per_window) + int(i)
+            idx = (slider.page_idx * num_images_per_page) + int(i)
+            if idx >= num_images or idx < 0:
+                return
             row = images[idx]
 
             rel_path = row['rel_path'].item()
@@ -909,9 +944,9 @@ class AnnotationManager(object):
             bbox = row['bbox'] # x1, y1, x2, y2
             parts = row['parts']
 
-            title = 'Window {current_window}/{total_windows}\n{row_index} {path}'.format(
-                current_window=slider.window_idx + 1,
-                total_windows=total_windows,
+            title = 'Page {current_page}/{total_pages}\n{row_index} {path}'.format(
+                current_page=slider.page_idx + 1,
+                total_pages=total_pages,
                 row_index=idx,
                 path=rel_path
             )
@@ -988,6 +1023,7 @@ class AnnotationManager(object):
 @click.option('--ignore', type=click.Path(), help='Ignore file with list of frame numbers (0-based) to exclude')
 @click.option('--max-kp-diff', type=float, help='Maximum pixel difference for a keypoint from frame to frame')
 @click.option('--skeleton', type=click.Path(), help='Skeleton file in JSON format')
+@click.option('--exclude-kp', multiple=True, help='Name or 0-based Index of Keypoint to exclude')
 def do_it(
     action,
     annotation,
@@ -1000,6 +1036,7 @@ def do_it(
     ignore,
     max_kp_diff,
     skeleton,
+    exclude_kp
 ):
     '''
     Utility to update, verify, review the provided <ANNOTATION> MatLab file for
@@ -1026,6 +1063,7 @@ def do_it(
         ignore_file=ignore,
         max_kp_diff=max_kp_diff,
         skeleton_file=skeleton,
+        exclude_kps=exclude_kp
     )
 
     fn = getattr(mgr, action)
