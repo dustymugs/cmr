@@ -17,10 +17,7 @@ class CowDataset(BaseDataset):
 
     def __init__(self, opts, filter_key=None):
         super().__init__(opts=opts, filter_key=filter_key)
-        self.img_dir = '' # note that we override the default
-        self.kp_perm = np.array(
-            [1, 2, 3, 4, 5, 6, 11, 12, 13, 10, 7, 8, 9, 14, 15, 16, 17, 18, 19, 20, 21]
-        ) - 1
+        self.img_dir = '' # note that we override the default relative paths to force absolute paths
 
 #----------- Data Loader ----------#
 #----------------------------------#

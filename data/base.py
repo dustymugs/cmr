@@ -275,6 +275,10 @@ class BaseDataset(_BaseDataset):
         self.num_imgs = len(self.anno)
         print('{} images'.format(self.num_imgs))
 
+        # assume that kp_perm is sequentially arranged (e.g. 0, 1, 2, 3 vs 0, 2, 1, 3)
+        # override this in inherited class if needed
+        self.kp_perm = np.array(list(range(self.anno[0].parts.shape[-1])))
+
 # ------------ Data Loader ----------- #
 # ------------------------------------ #
 def base_loader(d_set_func, batch_size, opts, filter_key=None, shuffle=True):

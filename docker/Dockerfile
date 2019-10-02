@@ -40,6 +40,7 @@ RUN cd /tmp && \
     /bin/bash ./Miniconda3.sh -f -b -p $CONDA_DIR && \
     rm Miniconda3.sh && \
     conda install -y conda python=${python_version} six wheel numpy pillow opencv && \
+    conda install -y -c conda-forge x264=='1!152.20180717' ffmpeg=4.0.2 && \
     conda clean -yt
 
 RUN conda install -c pytorch -y pytorch torchvision && \
@@ -48,7 +49,7 @@ RUN conda install -c pytorch -y pytorch torchvision && \
 # jupyter script
 COPY docker/start_jupyter.sh /usr/local/bin
 
-# init script
+# cmr requirements
 COPY requirements.txt /tmp
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
     rm -rf /tmp/requirements.txt

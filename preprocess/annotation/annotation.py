@@ -775,10 +775,10 @@ class AnnotationManager(object):
         assert len(scorer) == 1
         scorer = scorer.pop()
 
-        self.keypoints = keypoints = []
+        self.keypoints = []
         for kp in df.columns.get_level_values(1):
-            if kp not in keypoints:
-                keypoints.append(kp)
+            if kp not in self.keypoints:
+                self.keypoints.append(kp)
 
         self._filtered_keypoints()
 
@@ -787,7 +787,7 @@ class AnnotationManager(object):
         assert parameters == set(('x', 'y', 'likelihood'))
 
         kp_data = []
-        for kp in keypoints:
+        for kp in self.keypoints:
 
             X = df[scorer][kp]['x'].values
             Y = df[scorer][kp]['y'].values
@@ -813,10 +813,8 @@ class AnnotationManager(object):
 
                 if outlier_x.any():
                     P[outlier_x, ...] = False
-                    #np.place(P, outlier_x, False)
                 if outlier_y.any():
                     P[outlier_y, ...] = False
-                    #np.place(P, outlier_y, False)
 
             kp_data.append(np.array([X, Y, P]))
 
