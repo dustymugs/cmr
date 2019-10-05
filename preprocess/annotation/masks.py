@@ -92,7 +92,6 @@ class SegmentImage(object):
         width,
         height,
         scores=None,
-        min_box_area_ratio=0.2
     ):
 
         max_area = width * height * 1.
@@ -113,7 +112,7 @@ class SegmentImage(object):
                 if (
                     class_id in self.only_class_ids and
                     score > self.min_score and
-                    box_area / max_area >= min_box_area_ratio
+                    box_area / max_area >= self.min_box_area_ratio
                 ):
 
                     filtered_instances.append(idx)
@@ -246,6 +245,7 @@ class SegmentImage(object):
         video_extensions=None,
         image_extensions=None,
         visualize=False,
+        min_box_area_ratio=0.2
     ):
 
         self.videos = videos
@@ -267,6 +267,8 @@ class SegmentImage(object):
                 self.random_colors(90)
             )
         }
+
+        self.min_box_area_ratio = min_box_area_ratio
 
     @property
     def videos(self):
@@ -586,6 +588,7 @@ class SegmentImage(object):
 @click.option('--image-dir', multiple=True, type=click.Path(), help='Directory of images for Mask-RCNN to process')
 @click.option('--class-id', type=int, multiple=True, default=SegmentImage.COCO_IDS, help='COCO ID to filter Mask-RCNN results')
 @click.option('--min-score', type=float, default=0.5, help='Mask-RCNN scores below this value will be excluded from the resultset')
+@click.option('--min-box-area-ratio', type=float, default=0.2, help='Minimum percentage of total area that the bbox area must occupy')
 @click.option('--video-extension', '-vx', multiple=True)
 @click.option('--image-extension', '-ix', multiple=True)
 @click.option('--visualize', '-v', is_flag=True, help='Show Mask-RCNN results')
@@ -596,9 +599,10 @@ def do_it(
     image_dir,
     class_id,
     min_score,
+    min_box_area_ratio,
     video_extension,
     image_extension,
-    visualize
+    visualize,
 ):
 
     si = SegmentImage(
@@ -611,6 +615,7 @@ def do_it(
         video_extensions=video_extension,
         image_extensions=image_extension,
         visualize=visualize,
+        min_box_area_ratio=min_box_area_ratio
     )
 
     si.process()

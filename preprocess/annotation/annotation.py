@@ -115,7 +115,7 @@ class DynamicRecArray(object):
         self.length = 0
         self.size = size
         self._data = np.empty(self.size, dtype=self.dtype)
-        self._not_deleted = np.ones(self.size, dtype=bool)
+        self._is_valid = np.zeros(self.size, dtype=bool)
 
     def __len__(self):
         return self.length
@@ -123,13 +123,18 @@ class DynamicRecArray(object):
     def _resize(self):
 
         if self.length == self.size:
-            self.size = int(1.5 * self.size)
-            self._data = np.resize(self._data, self.size)
-            self._not_deleted = np.resize(self._not_deleted, self.size)
+
+            new_size = int(1.5 * self.size)
+            delta = new_size - self.size
+            self.size = new_size
+
+            self._data.resize(self.size)
+            self._is_valid.resize(self.size)
 
     def append(self, rec):
         self._resize()
         self._data[self.length] = rec
+        self._is_valid[self.length] = True
         self.length += 1
 
     def extend(self, recs):
@@ -138,11 +143,12 @@ class DynamicRecArray(object):
 
     def delete(self, index):
 
-        self._not_deleted[index] = False
+        self._is_valid[index] = False
+        # TODO: delete the actual object?
 
     @property
     def data(self):
-        return (self._data[self._not_deleted])[:self.length]
+        return (self._data[self._is_valid])[:self.length]
 
 class AnnotationManager(object):
 
@@ -277,6 +283,28 @@ class AnnotationManager(object):
 
         self._exclude_kp = new_value
 
+    @property
+    def kp_colors(self):
+        return self._kp_colors
+
+    @kp_colors.setter
+    def kp_colors(self, new_value):
+        if new_value is None:
+            new_value = tuple()
+
+        assert hasattr(new_value, '__iter__'), \
+            '"kp_colors" is not iterable (e.g. list, set, tuple)'
+
+        as_dict = {
+            kp: (int(r) / 255., int(g) / 255., int(b) / 255.)
+            for kp, r, g, b in [
+                v.split(',')
+                for v in new_value
+            ]
+        }
+
+        self._kp_colors = as_dict
+
     def __init__(
         self,
         annotation_file,
@@ -289,7 +317,8 @@ class AnnotationManager(object):
         ignore_file=None,
         max_kp_diff=None,
         skeleton_file=None,
-        exclude_keypoints=None
+        exclude_keypoints=None,
+        kp_colors=None
     ):
 
         self.annotation_file = annotation_file
@@ -308,6 +337,7 @@ class AnnotationManager(object):
         self.max_kp_diff = max_kp_diff
         self.skeleton_file = skeleton_file
         self.exclude_keypoints = exclude_keypoints
+        self.kp_colors = kp_colors
 
     def _load_annotation_data(self, raise_error=True):
 
@@ -325,7 +355,14 @@ class AnnotationManager(object):
 
         else:
 
-            self.keypoints = self.annotation_data.get('keypoints', [])
+            if 'keypoints' in self.annotation_data:
+                self.keypoints = [
+                    kp.strip()
+                    for kp in self.annotation_data['keypoints']
+                ]
+            else:
+                self.keypoints = []
+
             return True
 
     def _save_annotation_data(self):
@@ -444,16 +481,23 @@ class AnnotationManager(object):
         # we intentionally exclude everything not required for CMR to run
         if self.annotation_data is not None:
 
-            images = self.annotation_data['images'][0]
-            for record in images:
-                row = np.array(
-                    [tuple(
-                        record[name]
-                        for name in dtype.names
-                    )],
-                    dtype=dtype
-                )
-                self._add_to_images(row)
+            try:
+                images = self.annotation_data['images'][0]
+            except Exception as e:
+                pass
+            else:
+                for record in images:
+                    row = np.array(
+                        [tuple(
+                            record[name]
+                            for name in dtype.names
+                        )],
+                        dtype=dtype
+                    )
+                    self._add_to_images(row)
+
+                assert self._images.length == images.shape[0]
+                assert len(self._rel_path_lookup.keys()) >= images.shape[0]
 
     def _delete_from_lookup(self, rel_path):
 
@@ -643,6 +687,9 @@ class AnnotationManager(object):
         the_file = self.video_file or self.image_file
         the_full_file = osp.abspath(the_file)
 
+        # delete any reference to the_file
+        self._delete_from_images(the_file)
+
         height, width = self._get_dimensions()
 
         parts = self._load_keypoint_data(
@@ -650,9 +697,6 @@ class AnnotationManager(object):
             width=width
         )
         masks_boxes = self._load_masks_boxes()
-
-        # delete any reference to the_file
-        self._delete_from_images(the_file)
 
         # if video, extract frames
         frames_path = None
@@ -662,6 +706,7 @@ class AnnotationManager(object):
         # add rows to self._images
         dtype = self.STRUCTURED_DTYPES['images']
         num_keypoints = len(self.keypoints)
+        num_included = 0
         for frame_num, mask_box in masks_boxes.items():
 
             frame_parts = parts[frame_num]
@@ -690,6 +735,13 @@ class AnnotationManager(object):
                 dtype=dtype
             )
             self._add_to_images(row)
+            num_included += 1
+
+        assert num_included == self._images.data.shape[0], \
+            'Mismatch detected in number of data to be written. Expected {}. Got {}'.format(
+                num_included,
+                self._images.data.shape[0]
+            )
 
         self._save_annotation_data_structure()
         self._save_annotation_data()
@@ -724,7 +776,9 @@ class AnnotationManager(object):
 
     def _filter_keypoints_using_skeleton(self, kp_data):
 
+        # TODO: remove once this works
         return kp_data
+
         if not self.skeleton_file:
             return kp_data
 
@@ -805,6 +859,7 @@ class AnnotationManager(object):
 
             # remove outlier keypoints
             if self.max_kp_diff is not None:
+
                 outlier_x = np.absolute(np.diff(X)) > self.max_kp_diff
                 outlier_y = np.absolute(np.diff(Y)) > self.max_kp_diff
 
@@ -943,10 +998,11 @@ class AnnotationManager(object):
             bbox = row['bbox'] # x1, y1, x2, y2
             parts = row['parts']
 
-            title = 'Page {current_page}/{total_pages}\n{row_index} {path}'.format(
+            title = 'Page {current_page}/{total_pages}\n{row_index}/{total_rows} {path}'.format(
                 current_page=slider.page_idx + 1,
                 total_pages=total_pages,
                 row_index=idx,
+                total_rows=num_images,
                 path=rel_path
             )
             ax.set_title(title)
@@ -1006,9 +1062,24 @@ class AnnotationManager(object):
 
         num_keypoints = images[0]['parts'].shape[-1]
         colors = self._random_colors(num_keypoints)
+        colors = self._merge_colors(colors)
 
         self._show_review_window(images, num_keypoints, colors)
         plt.close('all')
+
+    def _merge_colors(self, colors):
+
+        assert len(self.keypoints)
+
+        for kp_name, rgb in self.kp_colors.items():
+
+            if kp_name not in self.keypoints:
+                continue
+
+            idx = self.keypoints.index(kp_name)
+            colors[idx] = rgb
+
+        return colors
 
 @click.command()
 @click.argument('action', type=click.Choice(('update', 'verify', 'review')))
@@ -1023,6 +1094,7 @@ class AnnotationManager(object):
 @click.option('--max-kp-diff', type=float, help='Maximum pixel difference for a keypoint from frame to frame')
 @click.option('--skeleton', type=click.Path(), help='Skeleton file in JSON format')
 @click.option('--exclude-kp', multiple=True, help='Name or 0-based Index of Keypoint to exclude')
+@click.option('--kp-color', multiple=True, help='Comma separated pair of values (Keypoint, RGB). e.g. --kp-color=Nose,255,0,0')
 def do_it(
     action,
     annotation,
@@ -1035,7 +1107,8 @@ def do_it(
     ignore,
     max_kp_diff,
     skeleton,
-    exclude_kp
+    exclude_kp,
+    kp_color,
 ):
     '''
     Utility to update, verify, review the provided <ANNOTATION> MatLab file for
@@ -1062,7 +1135,8 @@ def do_it(
         ignore_file=ignore,
         max_kp_diff=max_kp_diff,
         skeleton_file=skeleton,
-        exclude_keypoints=exclude_kp
+        exclude_keypoints=exclude_kp,
+        kp_colors=kp_color
     )
 
     fn = getattr(mgr, action)
