@@ -1,7 +1,55 @@
-# to run cmr from cmr repo root:
+###############################################################################
+# in beef-catalog
+###############################################################################
 
-docker/run_x11.sh --runtime=nvidia -v /home/dustymugs/Projects:/projects -p 8886:8888 cmr
+#
+# build dlc dataset
+#
 
-# ONLY first container run
+for f in Black\ Angus/AAA/17264774 Black\ Angus/AAA/18577290 Black\ Angus/AAA/18945739 Black\ Angus/AAA/19135002 Black\ Angus/AAA/19194709 Black\ Angus/AAA/19194711 Black\ Angus/AAA/19382912 Highland/28_5396818eb0df8d7e3f137ad9c663e681 Hereford/43789433 Unsorted/LFM2150578 Charolais/M916431 Unsorted/P724338 Unsorted/3606160 Hereford/563881780 Black\ Angus/AAA/18439501 Black\ Angus/AAA/19110509; do echo $f; python data_catalog/videos/build_dlc_dataset.py '/projects/Beef Industry/locomotion/locomotion-dustymugs-2019-06-17' "Videos/${f}.mp4" "Videos/${f}.xml"; done
 
-/usr/local/bin/init_cmr.sh
+###############################################################################
+# in cmr
+###############################################################################
+
+#
+# create instance segmentations
+#
+
+python /cmr/preprocess/annotation/masks.py --video-dir /projects/Beef\ Industry/locomotion/locomotion-dustymugs-2019-06-17/videos/ --expected-count 1
+
+#
+# assemble annotations MAT
+#
+
+# "17264774"
+# "18577290"
+# "18945739"
+# "19194709"
+# "19382912"
+# "43789433"
+# "M916431"
+# "19110509"
+# "18439501"
+# "3606160"
+
+# removed from too much data (matlab < 7.3 matrix size)
+# "19194711"
+# "19135002"
+# "LFM2150578"
+
+for f in "3606160" "17264774" "18577290" "18945739" "19194709" "19382912" "43789433" "M916431" "19110509" "18439501" ; do echo $f; python /cmr/preprocess/annotation/annotation.py update /cmr/cachedir/cow6/data/all_cleaned.mat --mask /projects/Beef\ Industry/locomotion/locomotion-dustymugs-2019-06-17/videos/${f}.mask.h5 --keypoint /projects/Beef\ Industry/locomotion/locomotion-dustymugs-2019-06-17/videos/${f}DeepCut_resnet50_locomotionJun17shuffle1_1030000filtered.h5 --video /projects/Beef\ Industry/locomotion/locomotion-dustymugs-2019-06-17/videos/${f}.mp4 --frame-dir /cmr/cachedir/cow6/frames --ignore /projects/Beef\ Industry/locomotion/locomotion-dustymugs-2019-06-17/videos/${f}.ignore --exclude-kp LEar --exclude-kp REar --no-frames; done
+
+#
+# review annotations MAT
+#
+
+for f in "3606160" "17264774" "18577290" "18945739" "19194709" "19382912" "43789433" "M916431" "19110509" "18439501"; do python /cmr/preprocess/annotation/annotation.py review /cmr/cachedir/cow6/data/$f.mat --kp-color=Nose,255,255,255 --kp-color=Neck,255,255,255 --kp-color=MidHip,255,255,255 --kp-color=MidShoulder,255,255,255 --kp-color=Navel,255,255,255 --kp-color=RShoulder,0,255,0 --kp-color=RElbow,0,255,0 --kp-color=RWrist,0,255,0 --kp-color=RHip,0,255,0 --kp-color=RKnee,0,255,0 --kp-color=RAnkle,0,255,0 --kp-color=REye,0,255,0 --kp-color=LShoulder,255,0,0 --kp-color=LElbow,255,0,0 --kp-color=LWrist,255,0,0 --kp-color=LHip,255,0,0 --kp-color=LKnee,255,0,0 --kp-color=LAnkle,255,0,0 --kp-color=LEye,255,0,0 ; done
+
+python /cmr/preprocess/annotation/annotation.py review /cmr/cachedir/cow6/data/all_cleaned.mat --kp-color=Nose,255,255,255 --kp-color=Neck,255,255,255 --kp-color=MidHip,255,255,255 --kp-color=MidShoulder,255,255,255 --kp-color=Navel,255,255,255 --kp-color=RShoulder,0,255,0 --kp-color=RElbow,0,255,0 --kp-color=RWrist,0,255,0 --kp-color=RHip,0,255,0 --kp-color=RKnee,0,255,0 --kp-color=RAnkle,0,255,0 --kp-color=REye,0,255,0 --kp-color=LShoulder,255,0,0 --kp-color=LElbow,255,0,0 --kp-color=LWrist,255,0,0 --kp-color=LHip,255,0,0 --kp-color=LKnee,255,0,0 --kp-color=LAnkle,255,0,0 --kp-color=LEye,255,0,0
+
+#
+# to train
+#
+
+python -m cmr.experiments.cow --name=cow6 --plot_scalars --save_epoch_freq=100 --batch_size=8 --display_visuals --display_freq=60 --cache_dir /cmr/cachedir/cow6 --data_dir /cmr/cachedir/cow6 --kp_loss_wt=60 --cam_loss_wt=4

@@ -24,8 +24,8 @@ import time
 # https://stackoverflow.com/a/41731455/3121505
 class PageSlider(matplotlib.widgets.Slider):
 
-    def __init__(self, ax, label, numpages = 10, valinit=0, valfmt='%1d', 
-                 closedmin=True, closedmax=True,  
+    def __init__(self, ax, label, numpages = 10, valinit=0, valfmt='%1d',
+                 closedmin=True, closedmax=True,
                  dragging=True, **kwargs):
 
         self.facecolor=kwargs.get('facecolor',"w")
@@ -33,7 +33,7 @@ class PageSlider(matplotlib.widgets.Slider):
         self.fontsize = kwargs.pop('fontsize', 10)
         self.numpages = numpages
 
-        super(PageSlider, self).__init__(ax, label, 0, numpages, 
+        super(PageSlider, self).__init__(ax, label, 0, numpages,
                             valinit=valinit, valfmt=valfmt, **kwargs)
 
         self.poly.set_visible(False)
@@ -42,9 +42,9 @@ class PageSlider(matplotlib.widgets.Slider):
         for i in range(numpages):
             facecolor = self.activecolor if i==valinit else self.facecolor
             r  = matplotlib.patches.Rectangle(
-                (float(i) / numpages, 0), 
+                (float(i) / numpages, 0),
                 1. / numpages,
-                1, 
+                1,
                 transform=ax.transAxes,
                 facecolor=facecolor
             )
@@ -66,7 +66,7 @@ class PageSlider(matplotlib.widgets.Slider):
         fax = divider.append_axes("right", size="5%", pad=0.05)
         self.button_back = matplotlib.widgets.Button(
             bax,
-            label='\u25C0', 
+            label='\u25C0',
             color=self.facecolor,
             hovercolor=self.activecolor
         )
@@ -395,7 +395,7 @@ class AnnotationManager(object):
         num_images = len(images)
 
         #
-        # required fields of images 
+        # required fields of images
         #
 
         names = set(images.dtype.names)
@@ -417,10 +417,10 @@ class AnnotationManager(object):
             #
             # rel_path
             #
-            
+
             assert row['rel_path'].dtype.kind in ('S', 'U'), \
                 'Datatype for "rel_path" must be Unicode or String'
-            rel_path = row['rel_path'].item() 
+            rel_path = row['rel_path'].item()
             assert rel_path is not None and len(rel_path) > 0, \
                 'Value missing for "rel_path"'
 
@@ -533,7 +533,7 @@ class AnnotationManager(object):
                 self._delete_from_lookup(frame_path)
 
         else:
-        
+
             for index in self._find_in_lookup(rel_path):
                 self._images.delete(index)
             self._delete_from_lookup(rel_path)
@@ -707,12 +707,13 @@ class AnnotationManager(object):
         dtype = self.STRUCTURED_DTYPES['images']
         num_keypoints = len(self.keypoints)
         num_included = 0
+        start_num_rows = self._images.data.shape[0]
         for frame_num, mask_box in masks_boxes.items():
 
             frame_parts = parts[frame_num]
             # make sure most keypoints are usable
-            if np.count_nonzero(frame_parts[2, :]) / num_keypoints < 0.7:
-                continue
+            #if np.count_nonzero(frame_parts[2, :]) / num_keypoints < 0.7:
+            #    continue
 
             if frames_path:
                 rel_path = osp.join(
@@ -737,7 +738,7 @@ class AnnotationManager(object):
             self._add_to_images(row)
             num_included += 1
 
-        assert num_included == self._images.data.shape[0], \
+        assert num_included == (self._images.data.shape[0] - start_num_rows), \
             'Mismatch detected in number of data to be written. Expected {}. Got {}'.format(
                 num_included,
                 self._images.data.shape[0]

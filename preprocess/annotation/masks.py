@@ -99,6 +99,7 @@ class SegmentImage(object):
         if self.only_class_ids:
 
             filtered_instances = []
+            best_of = {} # only used for self.expected_count > 0
 
             if scores is None:
                 scores = []
@@ -115,7 +116,36 @@ class SegmentImage(object):
                     box_area / max_area >= self.min_box_area_ratio
                 ):
 
-                    filtered_instances.append(idx)
+                    if self.expected_count:
+
+                        best_idx = best_of.setdefault(class_id, None)
+                        if best_idx is None:
+
+                            best_of[class_id] = idx
+
+                        else:
+
+                            best_idx = best_of[class_id]
+                            bx1, by1, bx2, by2 = boxes[best_idx]
+                            best_area = math.fabs(bx2 - bx1) * math.fabs(by2 - by1) * 1.
+                            area_ratio = box_area / best_area
+
+                            if (
+                                area_ratio > 1.25 or (
+                                    area_ratio > 1. and
+                                    score > scores[best_idx]
+                                )
+                            ):
+                                best_of[class_id] = idx
+
+                    else:
+
+                        filtered_instances.append(idx)
+
+
+            if best_of:
+
+                filtered_instances = best_of.values()
 
         else:
 
@@ -131,7 +161,7 @@ class SegmentImage(object):
         class_ids,
         class_names=None,
         scores=None,
-        title="",
+        title=None,
         show_mask=True, show_bbox=True,
         colors=None,
         captions=None,
@@ -148,6 +178,9 @@ class SegmentImage(object):
         height, width = image.shape[:2]
         figsize = (width / dpi, height / dpi)
         fig, ax = plt.subplots(1, figsize=figsize)
+
+        if title:
+            ax.set_title(title)
 
         if class_names is None:
             class_names = {
@@ -242,10 +275,11 @@ class SegmentImage(object):
         only_class_ids=None,
         min_score=0.5,
         min_mask_score=0.5,
+        expected_count=None,
+        min_box_area_ratio=0.05,
         video_extensions=None,
         image_extensions=None,
         visualize=False,
-        min_box_area_ratio=0.2
     ):
 
         self.videos = videos
@@ -269,6 +303,12 @@ class SegmentImage(object):
         }
 
         self.min_box_area_ratio = min_box_area_ratio
+
+        self.expected_count = (
+            expected_count
+            if expected_count is not None and expected_count > 0
+            else None
+        )
 
     @property
     def videos(self):
@@ -451,6 +491,7 @@ class SegmentImage(object):
         results = self.model([tensor])[0]
 
         boxes = results['boxes'].detach().cpu().numpy()
+        # mask array values are confidences, so need to threshhold for binary mask
         masks = results['masks'].detach().cpu().numpy() >= self.min_mask_score
         class_ids = results['labels'].detach().cpu().numpy()
         scores = results['scores'].detach().cpu().numpy()
@@ -463,7 +504,7 @@ class SegmentImage(object):
             height=height,
         )
 
-        if self.visualize:
+        if self.visualize and frame_num >= 545:
             self.overlay_instances(
                 image=(
                     frame
@@ -476,6 +517,7 @@ class SegmentImage(object):
                 scores=scores,
                 show_bbox=True,
                 show_mask=True,
+                title=f'Frame {frame_num}'
             )
 
         h5_name = os.path.splitext(image_path)[0] + '.mask.h5'
@@ -588,7 +630,8 @@ class SegmentImage(object):
 @click.option('--image-dir', multiple=True, type=click.Path(), help='Directory of images for Mask-RCNN to process')
 @click.option('--class-id', type=int, multiple=True, default=SegmentImage.COCO_IDS, help='COCO ID to filter Mask-RCNN results')
 @click.option('--min-score', type=float, default=0.5, help='Mask-RCNN scores below this value will be excluded from the resultset')
-@click.option('--min-box-area-ratio', type=float, default=0.2, help='Minimum percentage of total area that the bbox area must occupy')
+@click.option('--min-box-area-ratio', type=float, default=0.05, help='Minimum percentage of total area that the bbox area must occupy')
+@click.option('--expected-count', type=int, help='Number of detections expected per image/frame per class id. If more than one detection, only the highest scored detection will be kept')
 @click.option('--video-extension', '-vx', multiple=True)
 @click.option('--image-extension', '-ix', multiple=True)
 @click.option('--visualize', '-v', is_flag=True, help='Show Mask-RCNN results')
@@ -600,6 +643,7 @@ def do_it(
     class_id,
     min_score,
     min_box_area_ratio,
+    expected_count,
     video_extension,
     image_extension,
     visualize,
@@ -612,10 +656,11 @@ def do_it(
         image_dirs=image_dir,
         only_class_ids=class_id,
         min_score=min_score,
+        min_box_area_ratio=min_box_area_ratio,
+        expected_count=expected_count,
         video_extensions=video_extension,
         image_extensions=image_extension,
         visualize=visualize,
-        min_box_area_ratio=min_box_area_ratio
     )
 
     si.process()
