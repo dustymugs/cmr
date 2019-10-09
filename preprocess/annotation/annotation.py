@@ -690,12 +690,8 @@ class AnnotationManager(object):
         # delete any reference to the_file
         self._delete_from_images(the_file)
 
-        height, width = self._get_dimensions()
-
-        parts = self._load_keypoint_data(
-            height=height,
-            width=width
-        )
+        size = self._get_dimensions()
+        parts = self._load_keypoint_data(size)
         masks_boxes = self._load_masks_boxes()
 
         # if video, extract frames
@@ -817,18 +813,20 @@ class AnnotationManager(object):
 
         return kp_data
 
-    def _load_keypoint_data(self, height=None, width=None):
+    def _load_keypoint_data(self, size):
 
         #
         # written for DeepLabCut pandas dataframes
         #
+
+        height, width = size
 
         df = pd.read_hdf(self.keypoint_file)
         num_frames = len(df.index)
 
         scorer = set(df.columns.get_level_values(0))
         assert len(scorer) == 1
-        scorer = scorer.pop()
+        scorer = scorer[0]
 
         self.keypoints = []
         for kp in df.columns.get_level_values(1):
